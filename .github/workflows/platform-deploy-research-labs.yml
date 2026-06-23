@@ -1,0 +1,41 @@
+name: Build and push (research-labs)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  IMAGE: harbor.161-97-176-55.sslip.io/research-labs/app:latest
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login Harbor
+        uses: docker/login-action@v3
+        with:
+          registry: harbor.161-97-176-55.sslip.io
+          username: ${{ secrets.HARBOR_USERNAME }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            harbor.161-97-176-55.sslip.io/research-labs/app:latest
+            harbor.161-97-176-55.sslip.io/research-labs/app:${{ github.sha }}
+
+      - name: Deploy to Platform
+        run: |
+          curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy" \
+            -H "Content-Type: application/json" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN }}" \
+            -d '{"image_tag":"'"${{ github.sha }}"'","environment":"dev"}'
