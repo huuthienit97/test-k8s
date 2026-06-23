@@ -35,7 +35,7 @@ jobs:
 
       - name: Deploy to Platform
         run: |
-          curl -fsS -X POST "https://platform.161-97-176-55.sslip.io/api/v1/hooks/deploy" \
+          curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy" \
             -H "Content-Type: application/json" \
             -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN }}" \
             -d '{"image_tag":"'"${{ github.sha }}"'","environment":"dev"}'
