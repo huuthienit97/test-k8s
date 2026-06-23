@@ -33,6 +33,13 @@ jobs:
             harbor.161-97-176-55.sslip.io/research-labs/app:latest
             harbor.161-97-176-55.sslip.io/research-labs/app:${{ github.sha }}
 
+      - name: Notify platform (build started)
+        run: |
+          curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/event" \
+            -H "Content-Type: application/json" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN }}" \
+            -d '{"event":"build_started","image_tag":"'"${{ github.sha }}"'","environment":"dev"}'
+
       - name: Deploy to Platform
         run: |
           curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy" \
