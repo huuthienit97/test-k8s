@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-const appVersion = "auto-deploy-test-1"
+const appVersion = "auto-deploy-test-2"
 
 func main() {
 	log.SetFlags(log.LstdFlags)
@@ -17,8 +17,9 @@ func main() {
 	}
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		log.Printf("health check")
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"ok"}`))
+		_, _ = w.Write([]byte(`{"status":"ok","version":"` + appVersion + `"}`))
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
