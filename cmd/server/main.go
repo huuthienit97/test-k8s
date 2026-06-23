@@ -2,11 +2,15 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 )
 
+const appVersion = "auto-deploy-test-1"
+
 func main() {
+	log.SetFlags(log.LstdFlags)
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -18,12 +22,13 @@ func main() {
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s", r.Method, r.URL.Path)
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		_, _ = fmt.Fprintf(w, "test-k8s says hello! path=%s\\n", r.URL.Path)
+		_, _ = fmt.Fprintf(w, "test-k8s v%s says hello! path=%s\n", appVersion, r.URL.Path)
 	})
 
-	fmt.Printf("server listening on :%s\\n", port)
+	log.Printf("server listening on :%s (version %s)", port, appVersion)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
