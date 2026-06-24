@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const appVersion = "env-demo-1"
+const appVersion = "env-demo-2"
 
 // App đọc APP_GREETING từ môi trường (K8s Secret app-env trên Platform Console).
 // Không có file .env trong Git — khai báo trên tab Env vars.
