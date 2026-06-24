@@ -22,7 +22,7 @@ jobs:
         run: |
           curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy/event" \
             -H "Content-Type: application/json" \
-            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN }}" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN_DEPLOYGHCR }}" \
             -d '{"event":"build_started","image_tag":"'"${{ github.sha }}"'","environment":"dev"}'
 
       - name: Login GHCR
@@ -48,5 +48,5 @@ jobs:
         run: |
           curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy" \
             -H "Content-Type: application/json" \
-            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN }}" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN_DEPLOYGHCR }}" \
             -d '{"image_tag":"'"${{ github.sha }}"'","environment":"dev"}'
