@@ -1,0 +1,50 @@
+name: Build and push (deployghcr)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/huuthienit97/deployghcr/app:latest
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Notify platform (build started)
+        continue-on-error: true
+        run: |
+          curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy/event" \
+            -H "Content-Type: application/json" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN }}" \
+            -d '{"event":"build_started","image_tag":"'"${{ github.sha }}"'","environment":"dev"}'
+
+      - name: Login GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ghcr.io/huuthienit97/deployghcr/app:latest
+            ghcr.io/huuthienit97/deployghcr/app:${{ github.sha }}
+
+      - name: Deploy to Platform
+        run: |
+          curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy" \
+            -H "Content-Type: application/json" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN }}" \
+            -d '{"image_tag":"'"${{ github.sha }}"'","environment":"dev"}'
