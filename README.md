@@ -1,50 +1,52 @@
 # test-k8s
 
-App mẫu test end-to-end với Platform Console (GitHub Actions → GHCR → deploy K8s).
+App mẫu test end-to-end với Platform Console (GitHub Actions → Harbor/GHCR → deploy K8s).
 
-## Biến môi trường (demo `.env` không lên Git)
+## Contract env (Phase 2)
 
-App **bắt buộc** `APP_GREETING` lúc chạy. Không có trong repo — khai báo trên Console.
+Dev khai báo **key bắt buộc** trong repo; **giá trị** khai trên Console (không commit secret).
 
-| Biến | Bắt buộc | Ghi chú |
-|------|----------|---------|
-| `APP_GREETING` | Có | Câu chào hiển thị trên `/` |
-| `PORT` | Không | Mặc định `8080` |
+| File | Biến | Scope Console |
+|------|------|----------------|
+| `.platform/build.yaml` | `BUILD_LABEL` | **Khi build image** |
+| `.platform/runtime.yaml` | `APP_GREETING` | **Khi app chạy (Pod)** |
 
-### Local
+Platform đọc contract từ GitHub → readiness banner → chặn pipeline nếu thiếu trên Console.
+
+## Biến môi trường
+
+| Biến | Bắt buộc | Nơi khai | Ghi chú |
+|------|----------|----------|---------|
+| `BUILD_LABEL` | Có | Console → build image | `ARG` Dockerfile, hiện trên `/health` |
+| `APP_GREETING` | Có | Console → Pod | Runtime, hiện trên `/` |
+| `PORT` | Không | Pod (tuỳ chọn) | Mặc định `8080` |
+| `GIT_SHA`, `GIT_REF` | — | Platform tự inject | Mỗi lần build |
+
+### Local (runtime only)
 
 ```bash
-cp .env.example .env
-export $(grep -v '^#' .env | xargs)
+export APP_GREETING=hello-local
+export BUILD_LABEL=local-build
 go run ./cmd/server
 ```
 
-Hoặc:
-
 ```bash
-APP_GREETING=hello-local go run ./cmd/server
+docker build --build-arg BUILD_LABEL=local-docker --build-arg GIT_SHA=dev --build-arg GIT_REF=main -t test-k8s:local .
+docker run --rm -p 8080:8080 -e APP_GREETING=hello-docker test-k8s:local
 ```
 
-### Demo trên Platform (deployGHCR)
+### Demo trên Platform (`research-labs`)
 
-1. **Push code** (chưa khai báo env trên Console)  
-   → Build GitHub OK, deploy OK, **pod CrashLoopBackOff** (log: `thiếu biến môi trường APP_GREETING`).
+1. **Cấu hình app (dev)**  
+   - Pod: `APP_GREETING`  
+   - Build image: `BUILD_LABEL`  
+   - **Đồng bộ workflow GitHub** sau khi đổi contract/Dockerfile
 
-2. **Console → Project → Env vars → Dev** → thêm:
-   - Key: `APP_GREETING`
-   - Value: `Xin chào từ Platform!` (tuỳ ý)
+2. **Thiếu env** → Actions fail ở bước *Kiểm tra cấu hình env* (422)
 
-3. **Cách A:** Bấm lưu (tự sync + restart pod) — pod Running, mở domain thấy greeting.  
-   **Cách B:** Re-run workflow GitHub Actions — deploy lại với env đã có → thành công.
+3. **Đủ env** → build → push Harbor → deploy → `/health` có `build_label`, `/` có greeting
 
 ## Endpoints
 
-- `GET /health` → JSON `status`, `version`
-- `GET /` → plain text + `APP_GREETING`
-
-## Container
-
-```bash
-docker build -t test-k8s:local .
-docker run --rm -p 8080:8080 -e APP_GREETING=hello-docker test-k8s:local
-```
+- `GET /health` → JSON: `status`, `version`, `git_sha`, `git_ref`, `build_label`
+- `GET /` → plain text: `APP_GREETING`, `BUILD_LABEL`, git info
