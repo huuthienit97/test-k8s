@@ -40,6 +40,9 @@ jobs:
           tags: |
             harbor.161-97-176-55.sslip.io/research-labs/app:latest
             harbor.161-97-176-55.sslip.io/research-labs/app:${{ github.sha }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            GIT_REF=${{ github.ref_name }}
 
       - name: Deploy to Platform
         run: |
