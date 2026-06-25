@@ -1,0 +1,5 @@
+version: 1
+vars:
+  BUILD_LABEL:
+    required: true
+    description: Nhãn build hiển thị trên /health (Console → Khi build image)

@@ -1,0 +1,5 @@
+version: 1
+vars:
+  APP_GREETING:
+    required: true
+    description: Lời chào runtime (Console → Khi app chạy Pod)
