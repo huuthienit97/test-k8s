@@ -21,15 +21,15 @@ jobs:
         run: |
           curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy/event" \
             -H "Content-Type: application/json" \
-            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN }}" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN_RESEARCH_LABS }}" \
             -d '{"event":"build_started","image_tag":"'"${{ github.sha }}"'","environment":"dev"}'
 
       - name: Login Harbor
         uses: docker/login-action@v3
         with:
           registry: harbor.161-97-176-55.sslip.io
-          username: ${{ secrets.HARBOR_USERNAME }}
-          password: ${{ secrets.HARBOR_PASSWORD }}
+          username: ${{ secrets.HARBOR_USERNAME_RESEARCH_LABS }}
+          password: ${{ secrets.HARBOR_PASSWORD_RESEARCH_LABS }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -45,5 +45,5 @@ jobs:
         run: |
           curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy" \
             -H "Content-Type: application/json" \
-            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN }}" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN_RESEARCH_LABS }}" \
             -d '{"image_tag":"'"${{ github.sha }}"'","environment":"dev"}'
