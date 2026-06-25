@@ -16,6 +16,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Kiểm tra cấu hình env (Platform)
+        run: |
+          curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy/validate-config" \
+            -H "Content-Type: application/json" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN_RESEARCH_LABS }}" \
+            -d '{"environment":"dev"}'
+
       - name: Notify platform (build started)
         continue-on-error: true
         run: |
