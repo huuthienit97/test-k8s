@@ -8,11 +8,10 @@ import (
 	"strings"
 )
 
-const appVersion = "env-demo-4"
+const appVersion = "env-demo-5"
 
 var buildSHA = "local"
 var buildRef = "dev"
-var buildLabel = ""
 
 // App đọc APP_GREETING từ môi trường (K8s Secret app-env trên Platform Console).
 // Không có file .env trong Git — khai báo trên tab Env vars.
@@ -38,7 +37,7 @@ func main() {
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"ok","version":"` + appVersion + `","git_sha":"` + buildSHA + `","git_ref":"` + buildRef + `","build_label":"` + buildLabel + `","greeting_set":true}`))
+		_, _ = w.Write([]byte(`{"status":"ok","version":"` + appVersion + `","git_sha":"` + buildSHA + `","git_ref":"` + buildRef + `","greeting_set":true}`))
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -46,8 +45,8 @@ func main() {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		_, _ = fmt.Fprintf(
 			w,
-			"test-k8s v%s\nAPP_GREETING=%s\nbuild_label=%s\ngit_sha=%s\ngit_ref=%s\npath=%s\n",
-			appVersion, greeting, buildLabel, buildSHA, buildRef, r.URL.Path,
+			"test-k8s v%s\nAPP_GREETING=%s\ngit_sha=%s\ngit_ref=%s\npath=%s\n",
+			appVersion, greeting, buildSHA, buildRef, r.URL.Path,
 		)
 	})
 
