@@ -50,6 +50,7 @@ jobs:
           build-args: |
             GIT_SHA=${{ github.sha }}
             GIT_REF=${{ github.ref_name }}
+            BUILD_LABEL=${{ secrets.BUILD_RESEARCH_LABS_BUILD_LABEL }}
 
       - name: Deploy to Platform
         run: |
