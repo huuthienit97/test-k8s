@@ -2,7 +2,7 @@ name: Build and push (research-labs)
 
 on:
   push:
-    branches: [buildpack-test]
+    branches: [buildpack-python]
   workflow_dispatch:
 
 env:
