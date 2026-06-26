@@ -16,7 +16,7 @@ function requiredEnv(key) {
   return v;
 }
 
-const port = String(process.env.PORT || "8080");
+const port = String((process.env.PORT || "").trim() || "8080");
 const greeting = requiredEnv("APP_GREETING");
 const buildSHA = process.env.GIT_SHA || "local";
 const buildRef = process.env.GIT_REF || "dev";
