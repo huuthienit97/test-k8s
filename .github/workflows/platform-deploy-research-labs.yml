@@ -2,7 +2,7 @@ name: Build and push (research-labs)
 
 on:
   push:
-    branches: [main]
+    branches: [buildpack-test]
   workflow_dispatch:
 
 env:
@@ -38,19 +38,24 @@ jobs:
           username: ${{ secrets.HARBOR_USERNAME_RESEARCH_LABS }}
           password: ${{ secrets.HARBOR_PASSWORD_RESEARCH_LABS }}
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
+      - name: Setup pack (Buildpack)
+        uses: buildpacks/github-actions/setup-pack@v5.5.0
+
+      - name: Build and push (Buildpack)
+        uses: buildpacks/github-actions/buildpacks-action@v5.5.0
         with:
-          context: .
-          file: Dockerfile
+          builder: paketobuildpacks/builder-jammy-base
+          path: .
           push: true
+          image: harbor.161-97-176-55.sslip.io/research-labs/app:latest
           tags: |
             harbor.161-97-176-55.sslip.io/research-labs/app:latest
             harbor.161-97-176-55.sslip.io/research-labs/app:${{ github.sha }}
-          build-args: |
+          env: |
             GIT_SHA=${{ github.sha }}
             GIT_REF=${{ github.ref_name }}
             BUILD_LABEL=${{ secrets.BUILD_RESEARCH_LABS_BUILD_LABEL }}
+            PORT=8080
 
       - name: Deploy to Platform
         run: |
