@@ -9,6 +9,11 @@ App **Node.js** mẫu cho Buildpack (không có `Dockerfile`). Dùng với Platf
 | `.platform/build.yaml` | `BUILD_LABEL` | Khi build image |
 | `.platform/runtime.yaml` | `APP_GREETING` | Khi Pod chạy |
 
+## Buildpack (Paketo)
+
+- Builder: **jammy-full** (Console sinh workflow) — stack `base` thiếu `libatomic` với Node mới.
+- Pin **Node 20 LTS** qua `.nodejs-version` — tránh crash `libatomic.so.1` (exit 127).
+
 ## Test trên Console
 
 1. **Deploy / Git** → Branch = `buildpack-node`
