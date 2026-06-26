@@ -1,0 +1,4 @@
+# Paketo Go: binary nằm ở cmd/server (không có main.go ở root).
+[[io.buildpacks.build.env]]
+name = "BP_GO_TARGETS"
+value = "./cmd/server"

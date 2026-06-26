@@ -42,6 +42,17 @@ docker run --rm -p 8080:8080 -e APP_GREETING=hello-docker test-k8s:local
    - Build image: `BUILD_LABEL`  
    - **Đồng bộ workflow GitHub** sau khi đổi contract/Dockerfile
 
+### Test Buildpack (không xóa `Dockerfile` trên `main`)
+
+Platform quét **branch đang deploy**, không phải máy local.
+
+1. Dùng branch [`buildpack-test`](https://github.com/huuthienit97/test-k8s/tree/buildpack-test) — trên branch này **không có** `Dockerfile` (file vẫn còn trên `main`).
+2. Console → **Deploy / Git** → đổi **Branch** = `buildpack-test` → **Kết nối repo & bật auto-deploy** (hoặc sync workflow).
+3. Badge phải hiện **Buildpack** (không phải Docker).
+4. Push lên `buildpack-test` để chạy pipeline.
+
+Quay lại test Docker: branch `main` + sync workflow lại.
+
 2. **Thiếu env** → Actions fail ở bước *Kiểm tra cấu hình env* (422)
 
 3. **Đủ env** → build → push Harbor → deploy → `/health` có `build_label`, `/` có greeting
