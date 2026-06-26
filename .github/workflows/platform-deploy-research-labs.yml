@@ -42,20 +42,16 @@ jobs:
         uses: buildpacks/github-actions/setup-pack@v5.12.5
 
       - name: Build and push (Buildpack)
-        uses: buildpacks/github-actions/buildpacks-action@v5.12.5
-        with:
-          builder: paketobuildpacks/builder-jammy-base
-          path: .
-          push: true
-          image: harbor.161-97-176-55.sslip.io/research-labs/app:latest
-          tags: |
-            harbor.161-97-176-55.sslip.io/research-labs/app:latest
-            harbor.161-97-176-55.sslip.io/research-labs/app:${{ github.sha }}
-          env: |
-            GIT_SHA=${{ github.sha }}
-            GIT_REF=${{ github.ref_name }}
-            BUILD_LABEL=${{ secrets.BUILD_RESEARCH_LABS_BUILD_LABEL }}
-            PORT=8080
+        run: |
+          pack build "harbor.161-97-176-55.sslip.io/research-labs/app:latest" \
+            --path "." \
+            --builder paketobuildpacks/builder-jammy-base \
+            --publish \
+            --tag "harbor.161-97-176-55.sslip.io/research-labs/app:${{ github.sha }}" \
+            --env "GIT_SHA=${{ github.sha }}" \
+            --env "GIT_REF=${{ github.ref_name }}" \
+            --env "PORT=8080" \
+            --env "BUILD_LABEL=${{ secrets.BUILD_RESEARCH_LABS_BUILD_LABEL }}"
 
       - name: Deploy to Platform
         run: |
