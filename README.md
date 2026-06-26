@@ -46,6 +46,21 @@ docker run --rm -p 8080:8080 -e APP_GREETING=hello-docker test-k8s:local
 
 3. **Đủ env** → build → push Harbor → deploy → `/health` có `build_label`, `/` có greeting
 
+## Branch test Buildpack (đa ngôn ngữ)
+
+Platform quét **branch đang deploy** — mỗi branch là một stack, **không có `Dockerfile`** (trừ `main`).
+
+| Branch | Stack | File nhận diện |
+|--------|-------|----------------|
+| `main` | Go + **Docker** | `Dockerfile` |
+| `buildpack-test` | **Go** (Buildpack) | `go.mod`, `project.toml` |
+| `buildpack-node` | **Node.js** | `package.json` |
+| `buildpack-python` | **Python** | `requirements.txt`, `Procfile` |
+
+**Cách test:** Console → **Deploy / Git** → đổi **Branch** → **Đồng bộ workflow** → push lên branch đó.
+
+Quay lại Docker: branch `main` + sync workflow lại.
+
 ## Endpoints
 
 - `GET /health` → JSON: `status`, `version`, `git_sha`, `git_ref`, `build_label`
