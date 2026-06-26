@@ -45,12 +45,13 @@ jobs:
         run: |
           pack build "harbor.161-97-176-55.sslip.io/research-labs/app:latest" \
             --path "." \
-            --builder paketobuildpacks/builder-jammy-base \
+            --builder paketobuildpacks/builder-jammy-full \
             --publish \
             --tag "harbor.161-97-176-55.sslip.io/research-labs/app:${{ github.sha }}" \
             --env "GIT_SHA=${{ github.sha }}" \
             --env "GIT_REF=${{ github.ref_name }}" \
             --env "PORT=8080" \
+            --env "BP_NODE_VERSION=20" \
             --env "BUILD_LABEL=${{ secrets.BUILD_RESEARCH_LABS_BUILD_LABEL }}"
 
       - name: Deploy to Platform
