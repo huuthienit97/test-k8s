@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>test-k8s · multi-service</title>
+  <style>
+    :root { font-family: system-ui, sans-serif; color: #0f172a; background: #f8fafc; }
+    body { max-width: 640px; margin: 48px auto; padding: 0 16px; }
+    h1 { font-size: 1.5rem; margin-bottom: 8px; }
+    .muted { color: #64748b; font-size: 14px; }
+    pre { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow: auto; font-size: 13px; }
+    .badge { display: inline-block; background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+    button { margin-top: 12px; padding: 8px 16px; border: 0; border-radius: 6px; background: #2563eb; color: #fff; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+  </style>
+</head>
+<body>
+  <p class="badge">frontend · web</p>
+  <h1>Monorepo demo</h1>
+  <p class="muted">Static web gọi API qua Ingress <code>/api/*</code> → service <code>api</code>.</p>
+  <button type="button" id="btn">Gọi /api/health</button>
+  <pre id="out">Chưa gọi API…</pre>
+  <script>
+    document.getElementById("btn").onclick = async function () {
+      const out = document.getElementById("out");
+      out.textContent = "Đang gọi…";
+      try {
+        const r = await fetch("/api/health");
+        const j = await r.json();
+        out.textContent = JSON.stringify(j, null, 2);
+      } catch (e) {
+        out.textContent = "Lỗi: " + e.message;
+      }
+    };
+  </script>
+</body>
+</html>

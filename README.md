@@ -1,67 +1,39 @@
-# test-k8s
+# test-k8s — branch `multi-service`
 
-App mẫu test end-to-end với Platform Console (GitHub Actions → Harbor/GHCR → deploy K8s).
+Monorepo pilot **Giai đoạn 2**: 1 repo → 2 image (`api` + `web`) → 2 Deployment → Ingress `/api` + `/`.
 
-## Contract env (Phase 2)
+## Cấu trúc
 
-Dev khai báo **key bắt buộc** trong repo; **giá trị** khai trên Console (không commit secret).
-
-| File | Biến | Scope Console |
-|------|------|----------------|
-| `.platform/build.yaml` | `BUILD_LABEL` | **Khi build image** |
-| `.platform/runtime.yaml` | `APP_GREETING` | **Khi app chạy (Pod)** |
-
-Platform đọc contract từ GitHub → readiness banner → chặn pipeline nếu thiếu trên Console.
-
-## Biến môi trường
-
-| Biến | Bắt buộc | Nơi khai | Ghi chú |
-|------|----------|----------|---------|
-| `BUILD_LABEL` | Có | Console → build image | `ARG` Dockerfile, hiện trên `/health` |
-| `APP_GREETING` | Có | Console → Pod | Runtime, hiện trên `/` |
-| `PORT` | Không | Pod (tuỳ chọn) | Mặc định `8080` |
-| `GIT_SHA`, `GIT_REF` | — | Platform tự inject | Mỗi lần build |
-
-### Local (runtime only)
-
-```bash
-export APP_GREETING=hello-local
-export BUILD_LABEL=local-build
-go run ./cmd/server
+```
+backend/     → image research-labs/api
+frontend/    → image research-labs/web
+.platform/    → env contract (BUILD_LABEL, APP_GREETING)
 ```
 
+## Console (research-labs)
+
+1. Tab **Deploy / Git** → **Multi-service (api + web)** → Lưu (template `backend/` + `frontend/`)
+2. Branch = `multi-service`
+3. **Kết nối repo & bật auto-deploy** (sync workflow mới — 2 bước build)
+4. Push branch này
+
+Ingress: `https://<domain-dev>/` → web, `https://<domain-dev>/api/health` → api.
+
+## Env contract
+
+| Biến | Scope |
+|------|--------|
+| `BUILD_LABEL` | Build (`.platform/build.yaml`) |
+| `APP_GREETING` | Runtime (`.platform/runtime.yaml`) |
+
+## Local
+
 ```bash
-docker build --build-arg BUILD_LABEL=local-docker --build-arg GIT_SHA=dev --build-arg GIT_REF=main -t test-k8s:local .
-docker run --rm -p 8080:8080 -e APP_GREETING=hello-docker test-k8s:local
+# API
+cd backend && APP_GREETING=hello-local BUILD_LABEL=local go run ./cmd/server
+
+# Web (cần proxy /api → localhost:8080 hoặc test sau deploy)
+cd frontend && docker build -t test-web . && docker run -p 8081:8080 test-web
 ```
 
-### Demo trên Platform (`research-labs`)
-
-1. **Cấu hình app (dev)**  
-   - Pod: `APP_GREETING`  
-   - Build image: `BUILD_LABEL`  
-   - **Đồng bộ workflow GitHub** sau khi đổi contract/Dockerfile
-
-2. **Thiếu env** → Actions fail ở bước *Kiểm tra cấu hình env* (422)
-
-3. **Đủ env** → build → push Harbor → deploy → `/health` có `build_label`, `/` có greeting
-
-## Branch test Buildpack (đa ngôn ngữ)
-
-Platform quét **branch đang deploy** — mỗi branch là một stack, **không có `Dockerfile`** (trừ `main`).
-
-| Branch | Stack | File nhận diện |
-|--------|-------|----------------|
-| `main` | Go + **Docker** | `Dockerfile` |
-| `buildpack-test` | **Go** (Buildpack) | `go.mod`, `project.toml` |
-| `buildpack-node` | **Node.js** | `package.json` |
-| `buildpack-python` | **Python** | `requirements.txt`, `Procfile` |
-
-**Cách test:** Console → **Deploy / Git** → đổi **Branch** → **Đồng bộ workflow** → push lên branch đó.
-
-Quay lại Docker: branch `main` + sync workflow lại.
-
-## Endpoints
-
-- `GET /health` → JSON: `status`, `version`, `git_sha`, `git_ref`, `build_label`
-- `GET /` → plain text: `APP_GREETING`, `BUILD_LABEL`, git info
+Các branch khác: `main` (single Go), `buildpack-node`, `buildpack-python`.
