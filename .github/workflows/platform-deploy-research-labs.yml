@@ -2,7 +2,7 @@ name: Build and push (research-labs)
 
 on:
   push:
-    branches: [main]
+    branches: [multi-service]
   workflow_dispatch:
 
 env:
@@ -38,19 +38,21 @@ jobs:
           username: ${{ secrets.HARBOR_USERNAME_RESEARCH_LABS }}
           password: ${{ secrets.HARBOR_PASSWORD_RESEARCH_LABS }}
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: |
-            harbor.161-97-176-55.sslip.io/research-labs/app:latest
-            harbor.161-97-176-55.sslip.io/research-labs/app:${{ github.sha }}
-          build-args: |
-            GIT_SHA=${{ github.sha }}
-            GIT_REF=${{ github.ref_name }}
-            BUILD_LABEL=${{ secrets.BUILD_RESEARCH_LABS_BUILD_LABEL }}
+      - name: Setup pack (Buildpack)
+        uses: buildpacks/github-actions/setup-pack@v5.12.5
+
+      - name: Build and push App
+        run: |
+          pack build "harbor.161-97-176-55.sslip.io/research-labs/app:latest" \
+            --path "." \
+            --builder paketobuildpacks/builder-jammy-full \
+            --publish \
+            --tag "harbor.161-97-176-55.sslip.io/research-labs/app:${{ github.sha }}" \
+            --env "GIT_SHA=${{ github.sha }}" \
+            --env "GIT_REF=${{ github.ref_name }}" \
+            --env "PORT=8080" \
+            --env "BP_NODE_VERSION=20" \
+            --env "BUILD_LABEL=${{ secrets.BUILD_RESEARCH_LABS_BUILD_LABEL }}"
 
       - name: Deploy to Platform
         run: |
