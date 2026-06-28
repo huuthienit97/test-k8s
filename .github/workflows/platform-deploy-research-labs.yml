@@ -2,7 +2,7 @@ name: Build and push (research-labs)
 
 on:
   push:
-    branches: [multi-n-service]
+    branches: [multi-polyglot]
   workflow_dispatch:
 
 env:
@@ -40,7 +40,10 @@ jobs:
           username: ${{ secrets.HARBOR_USERNAME_RESEARCH_LABS }}
           password: ${{ secrets.HARBOR_PASSWORD_RESEARCH_LABS }}
 
-      - name: Build and push API
+      - name: Setup pack (Buildpack)
+        uses: buildpacks/github-actions/setup-pack@v5.12.5
+
+      - name: Build and push Api
         uses: docker/build-push-action@v6
         with:
           context: backend
@@ -71,19 +74,18 @@ jobs:
             VITE_API_BASE=/api
 
       - name: Build and push Worker
-        uses: docker/build-push-action@v6
-        with:
-          context: worker
-          file: worker/Dockerfile
-          push: true
-          tags: |
-            harbor.161-97-176-55.sslip.io/research-labs/worker:latest
-            harbor.161-97-176-55.sslip.io/research-labs/worker:${{ github.sha }}
-          build-args: |
-            GIT_SHA=${{ github.sha }}
-            GIT_REF=${{ github.ref_name }}
-            BUILD_LABEL=${{ secrets.BUILD_RESEARCH_LABS_BUILD_LABEL }}
-            VITE_API_BASE=/api
+        run: |
+          pack build "harbor.161-97-176-55.sslip.io/research-labs/worker:latest" \
+            --path "worker" \
+            --builder paketobuildpacks/builder-jammy-base \
+            --publish \
+            --tag "harbor.161-97-176-55.sslip.io/research-labs/worker:${{ github.sha }}" \
+            --env "GIT_SHA=${{ github.sha }}" \
+            --env "GIT_REF=${{ github.ref_name }}" \
+            --env "PORT=8080" \
+            --env "BP_CPYTHON_VERSION=3.11" \
+            --env "BUILD_LABEL=${{ secrets.BUILD_RESEARCH_LABS_BUILD_LABEL }}" \
+            --env "VITE_API_BASE=/api"
 
       - name: Deploy to Platform
         run: |
