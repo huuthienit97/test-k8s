@@ -3,37 +3,116 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>test-k8s · multi-service</title>
+  <title>test-k8s · L3 N-service</title>
   <style>
     :root { font-family: system-ui, sans-serif; color: #0f172a; background: #f8fafc; }
-    body { max-width: 640px; margin: 48px auto; padding: 0 16px; }
-    h1 { font-size: 1.5rem; margin-bottom: 8px; }
-    .muted { color: #64748b; font-size: 14px; }
-    pre { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow: auto; font-size: 13px; }
-    .badge { display: inline-block; background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-    button { margin-top: 12px; padding: 8px 16px; border: 0; border-radius: 6px; background: #2563eb; color: #fff; cursor: pointer; }
-    button:hover { background: #1d4ed8; }
+    body { max-width: 720px; margin: 40px auto; padding: 0 16px 48px; }
+    h1 { font-size: 1.5rem; margin: 8px 0; }
+    .muted { color: #64748b; font-size: 14px; line-height: 1.5; }
+    pre { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow: auto; font-size: 12px; margin-top: 12px; }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .badge-web { background: #dbeafe; color: #1d4ed8; }
+    .badge-l3 { background: #dcfce7; color: #15803d; }
+    .badge-internal { background: #fef3c7; color: #b45309; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    button { padding: 8px 14px; border: 0; border-radius: 6px; background: #2563eb; color: #fff; cursor: pointer; font-size: 14px; }
+    button.secondary { background: #e2e8f0; color: #0f172a; }
+    button:hover { filter: brightness(0.95); }
+    .fleet { display: grid; gap: 10px; margin-top: 20px; }
+    .svc { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; background: #fff; }
+    .svc-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .svc-name { font-weight: 700; font-size: 15px; }
+    .pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+    .pill-ok { background: #dcfce7; color: #15803d; }
+    .pill-warn { background: #fee2e2; color: #b91c1c; }
+    .pill-muted { background: #f1f5f9; color: #64748b; }
+    .pill-public { background: #dbeafe; color: #1d4ed8; }
+    .pill-internal { background: #fef3c7; color: #b45309; }
+    .svc-meta { font-size: 13px; color: #64748b; }
+    code { font-size: 12px; background: #f1f5f9; padding: 1px 5px; border-radius: 4px; }
   </style>
 </head>
 <body>
-  <p class="badge">frontend · web</p>
-  <h1>Monorepo demo</h1>
-  <p class="muted">Static web gọi API qua Ingress <code>/api/*</code> → service <code>api</code>.</p>
-  <p class="muted" id="deploy-note">Auto-deploy test · 2026-06-28 10:35 · multi-service</p>
-  <button type="button" id="btn">Gọi /api/health</button>
-  <pre id="out">Chưa gọi API…</pre>
+  <div class="badges">
+    <span class="badge badge-web">frontend · web</span>
+    <span class="badge badge-l3">L3 · N-service</span>
+    <span class="badge badge-internal">3 workloads · 2 public · 1 internal</span>
+  </div>
+  <h1>Monorepo demo — fleet view</h1>
+  <p class="muted">
+    Trang <strong>web</strong> (public) gọi <strong>api</strong> qua Ingress <code>/api/*</code>.
+    Service <strong>worker</strong> chỉ chạy nội bộ cluster — trình duyệt thấy worker qua <code>/api/fleet</code>
+    (api → <code>SVC_WORKER_URL</code>).
+  </p>
+  <p class="muted" id="deploy-note">Đang tải fleet…</p>
+
+  <div class="fleet" id="fleet-cards"></div>
+
+  <div class="actions">
+    <button type="button" id="btn-fleet">Tải lại /api/fleet</button>
+    <button type="button" id="btn-health" class="secondary">Gọi /api/health</button>
+  </div>
+  <pre id="out">Đang gọi /api/fleet…</pre>
+
   <script>
-    document.getElementById("btn").onclick = async function () {
-      const out = document.getElementById("out");
-      out.textContent = "Đang gọi…";
+    function pill(text, cls) {
+      return '<span class="pill ' + cls + '">' + text + '</span>';
+    }
+
+    function renderFleet(data) {
+      var cards = document.getElementById("fleet-cards");
+      cards.innerHTML = "";
+      (data.services || []).forEach(function (s) {
+        var pub = s.public === true;
+        var ok = s.status === "ok" || s.ok === true;
+        var statusPill = ok ? pill("ok", "pill-ok") : (s.status === "skipped" ? pill("n/a", "pill-muted") : pill(s.status || "?", "pill-warn"));
+        var accessPill = pub ? pill("public · Ingress", "pill-public") : pill("internal · cluster DNS", "pill-internal");
+        var meta = [];
+        if (s.ingress) meta.push("Ingress <code>" + s.ingress + "</code>");
+        if (s.discovery) meta.push("Discovery <code>" + s.discovery + "</code>");
+        if (s.version) meta.push("v " + s.version);
+        if (s.body && s.body.version) meta.push("worker " + s.body.version);
+        if (s.body && s.body.check && s.body.check.last_ok) meta.push("ping api ✓");
+        cards.innerHTML +=
+          '<div class="svc">' +
+            '<div class="svc-head">' +
+              '<span class="svc-name">' + s.name + '</span>' +
+              '<span>' + accessPill + ' ' + statusPill + '</span>' +
+            '</div>' +
+            '<div class="svc-meta">' + (meta.join(" · ") || (s.role || "")) + '</div>' +
+          '</div>';
+      });
+      document.getElementById("deploy-note").textContent =
+        (data.summary || "N-service") + " · git_ref " + ((data.api && data.api.git_ref) || "?");
+    }
+
+    async function loadFleet() {
+      var out = document.getElementById("out");
+      out.textContent = "Đang gọi /api/fleet…";
       try {
-        const r = await fetch("/api/health");
-        const j = await r.json();
+        var r = await fetch("/api/fleet");
+        var j = await r.json();
+        renderFleet(j);
         out.textContent = JSON.stringify(j, null, 2);
+      } catch (e) {
+        out.textContent = "Lỗi fleet: " + e.message;
+      }
+    }
+
+    document.getElementById("btn-fleet").onclick = loadFleet;
+    document.getElementById("btn-health").onclick = async function () {
+      var out = document.getElementById("out");
+      out.textContent = "Đang gọi /api/health…";
+      try {
+        var r = await fetch("/api/health");
+        out.textContent = JSON.stringify(await r.json(), null, 2);
       } catch (e) {
         out.textContent = "Lỗi: " + e.message;
       }
     };
+
+    loadFleet();
   </script>
 </body>
 </html>

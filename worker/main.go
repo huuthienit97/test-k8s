@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const appVersion = "multi-n-worker-1"
+const appVersion = "multi-n-worker-2"
 
 type status struct {
 	mu          sync.RWMutex
