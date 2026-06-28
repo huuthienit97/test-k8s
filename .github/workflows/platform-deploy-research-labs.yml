@@ -2,12 +2,13 @@ name: Build and push (research-labs)
 
 on:
   push:
-    branches: [multi-service]
+    branches: [multi-n-service]
   workflow_dispatch:
 
 env:
   API_IMAGE: harbor.161-97-176-55.sslip.io/research-labs/api:latest
   WEB_IMAGE: harbor.161-97-176-55.sslip.io/research-labs/web:latest
+  WORKER_IMAGE: harbor.161-97-176-55.sslip.io/research-labs/worker:latest
 
 jobs:
   build:
@@ -63,6 +64,21 @@ jobs:
           tags: |
             harbor.161-97-176-55.sslip.io/research-labs/web:latest
             harbor.161-97-176-55.sslip.io/research-labs/web:${{ github.sha }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            GIT_REF=${{ github.ref_name }}
+            BUILD_LABEL=${{ secrets.BUILD_RESEARCH_LABS_BUILD_LABEL }}
+            VITE_API_BASE=/api
+
+      - name: Build and push Worker
+        uses: docker/build-push-action@v6
+        with:
+          context: worker
+          file: worker/Dockerfile
+          push: true
+          tags: |
+            harbor.161-97-176-55.sslip.io/research-labs/worker:latest
+            harbor.161-97-176-55.sslip.io/research-labs/worker:${{ github.sha }}
           build-args: |
             GIT_SHA=${{ github.sha }}
             GIT_REF=${{ github.ref_name }}
