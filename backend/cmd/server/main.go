@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const appVersion = "multi-api-1"
+const appVersion = "multi-api-2"
 
 var buildSHA = "local"
 var buildRef = "dev"
