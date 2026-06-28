@@ -1,6 +1,16 @@
-# test-k8s — branch `multi-n-service`
+# test-k8s — branch `multi-polyglot`
 
-Monorepo pilot **Giai đoạn 3 (L3)**: 1 repo → **3 image** (`api` + `web` + `worker`) → worker **internal** (không Ingress), service discovery qua `SVC_API_URL`.
+Pilot **L4B polyglot**: Go (Docker) api + nginx web + **Python buildpack** worker internal.
+
+| Service | Stack | Build |
+|---------|-------|-------|
+| api | Go | Dockerfile `backend/` |
+| web | nginx | Dockerfile `frontend/` |
+| worker | Python | Buildpack `worker/` (Procfile + requirements.txt) |
+
+Branch trước: `multi-n-service` (worker Go Docker). Branch này đổi worker → Python buildpack.
+
+Console: sync `.platform/services.yaml` → sync workflow → push.
 
 ## Cấu trúc
 

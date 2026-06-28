@@ -3,13 +3,17 @@ layout: multi
 services:
   - name: api
     path: backend
+    build_mode: dockerfile
     ingress: /api
     health: /health
   - name: web
     path: frontend
+    build_mode: dockerfile
     ingress: /
     health: /
   - name: worker
     path: worker
+    build_mode: buildpack
+    stack: python
     expose: false
     health: /health

@@ -1,0 +1,2 @@
+# L4B polyglot pilot — worker Python (stdlib, Paketo buildpack)
+# Không cần dependency ngoài; production có thể thêm flask/gunicorn sau.
