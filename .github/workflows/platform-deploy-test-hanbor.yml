@@ -8,6 +8,9 @@ on:
 env:
   API_IMAGE: harbor.161-97-176-55.sslip.io/test-hanbor/api:latest
   WEB_IMAGE: harbor.161-97-176-55.sslip.io/test-hanbor/web:latest
+  NODE_IMAGE: harbor.161-97-176-55.sslip.io/test-hanbor/node:latest
+  DOTNET_IMAGE: harbor.161-97-176-55.sslip.io/test-hanbor/dotnet:latest
+  WORKER_IMAGE: harbor.161-97-176-55.sslip.io/test-hanbor/worker:latest
 
 jobs:
   build:
@@ -47,6 +50,9 @@ jobs:
           username: ${{ secrets.HARBOR_USERNAME_TEST_HANBOR }}
           password: ${{ secrets.HARBOR_PASSWORD_TEST_HANBOR }}
 
+      - name: Setup pack (Buildpack)
+        uses: buildpacks/github-actions/setup-pack@v5.12.5
+
       - name: Build and push Api
         uses: docker/build-push-action@v6
         with:
@@ -76,6 +82,50 @@ jobs:
             GIT_REF=${{ github.ref_name }}
             BUILD_LABEL=test-hanbor
             VITE_API_BASE=/api
+
+      - name: Build and push Node
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend-node/Dockerfile
+          push: true
+          tags: |
+            harbor.161-97-176-55.sslip.io/test-hanbor/node:latest
+            harbor.161-97-176-55.sslip.io/test-hanbor/node:${{ github.sha }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            GIT_REF=${{ github.ref_name }}
+            BUILD_LABEL=test-hanbor
+            VITE_API_BASE=/api
+
+      - name: Build and push Dotnet
+        uses: docker/build-push-action@v6
+        with:
+          context: backend-dotnet
+          file: backend-dotnet/Dockerfile
+          push: true
+          tags: |
+            harbor.161-97-176-55.sslip.io/test-hanbor/dotnet:latest
+            harbor.161-97-176-55.sslip.io/test-hanbor/dotnet:${{ github.sha }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            GIT_REF=${{ github.ref_name }}
+            BUILD_LABEL=test-hanbor
+            VITE_API_BASE=/api
+
+      - name: Build and push Worker
+        run: |
+          pack build "harbor.161-97-176-55.sslip.io/test-hanbor/worker:latest" \
+            --path "worker" \
+            --builder paketobuildpacks/builder-jammy-base \
+            --publish \
+            --tag "harbor.161-97-176-55.sslip.io/test-hanbor/worker:${{ github.sha }}" \
+            --env "GIT_SHA=${{ github.sha }}" \
+            --env "GIT_REF=${{ github.ref_name }}" \
+            --env "PORT=8080" \
+            --env "BP_CPYTHON_VERSION=3.11" \
+            --env "BUILD_LABEL=test-hanbor" \
+            --env "VITE_API_BASE=/api"
 
       - name: Deploy to Platform
         run: |
