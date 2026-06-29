@@ -85,15 +85,21 @@ export default function App() {
     <div className="app">
       <div className="badges">
         <span className="badge badge-react">React · web</span>
-        <span className="badge badge-l4c">L4C · deploy-retry-2</span>
-        <span className="badge badge-l4">Polyglot · 5 service</span>
-        <span className="badge badge-stacks">Go + Node + .NET + Python</span>
+        <span className="badge badge-autodeploy">Auto-deploy · v3</span>
+        <span className="badge badge-l4c">L4C · submodule</span>
+        <span className="badge badge-stacks">5 service fleet</span>
       </div>
-      <h1>Polyglot + Submodule · deploy retry</h1>
+      <h1>Auto-deploy demo — push → CI → Platform</h1>
       <p className="muted">
-        <strong>L4C</strong> — CI checkout <code>libs/is-docker</code> từ <code>.gitmodules</code>. Node image build từ repo root.
-        Trình duyệt chỉ gọi <strong>Go gateway</strong> (<code>/api/*</code>).
+        Thay đổi này để thử <strong>auto-deploy</strong> trên Console. Sau khi GitHub Actions xong, tab{" "}
+        <strong>Deploy</strong> sẽ poll tiến trình · site hiện badge <em>v3</em>.
       </p>
+      {fleet?.api?.git_sha && (
+        <p className="deploy-sha-hint">
+          Đang chạy commit <code>{String(fleet.api.git_sha).slice(0, 7)}</code>
+          {fleet.api.version ? <> · API <code>{fleet.api.version}</code></> : null}
+        </p>
+      )}
       {fleet?.summary && <p className="muted">{fleet.summary}</p>}
       {err && <p style={{ color: "#b91c1c" }}>{err}</p>}
 

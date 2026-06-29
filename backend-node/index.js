@@ -3,7 +3,7 @@
 import isDocker from "is-docker";
 import http from "http";
 
-const VERSION = "polyglot-node-submodule-2";
+const VERSION = "polyglot-node-submodule-3";
 const PORT = Number(process.env.PORT || 8080);
 
 const server = http.createServer((req, res) => {
@@ -26,7 +26,7 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(
       JSON.stringify({
-        message: "hello from node (L4C submodule deploy-retry)",
+        message: "auto-deploy demo v3 — node + submodule OK",
         stack: "node",
         version: VERSION,
         is_docker: isDocker(),

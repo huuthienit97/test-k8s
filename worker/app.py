@@ -10,7 +10,7 @@ import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-VERSION = "multi-py-worker-2"
+VERSION = "multi-py-worker-3"
 API_URL = os.environ.get("SVC_API_URL", "").rstrip("/")
 
 _state = {

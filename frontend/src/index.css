@@ -32,7 +32,18 @@ body {
 .badge-react { background: #dbeafe; color: #1d4ed8; }
 .badge-l4 { background: #dcfce7; color: #15803d; }
 .badge-l4c { background: #e0e7ff; color: #4338ca; }
+.badge-autodeploy { background: #fce7f3; color: #be185d; }
 .badge-stacks { background: #fef3c7; color: #b45309; }
+
+.deploy-sha-hint {
+  font-size: 13px;
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fdf2f8;
+  border: 1px solid #fbcfe8;
+  color: #9d174d;
+}
 
 h1 { font-size: 1.5rem; margin: 8px 0; }
 
