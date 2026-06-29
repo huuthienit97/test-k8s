@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const appVersion = "multi-n-api-2"
+const appVersion = "polyglot-full-api-1"
 
 var buildSHA = "local"
 var buildRef = "dev"
@@ -35,6 +35,7 @@ func writeHealth(w http.ResponseWriter) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"status":       "ok",
 		"service":      "api",
+		"stack":        "go",
 		"version":      appVersion,
 		"git_sha":      buildSHA,
 		"git_ref":      buildRef,
@@ -51,7 +52,7 @@ func probeService(name, baseURL, path string) map[string]any {
 	}
 	if strings.TrimSpace(baseURL) == "" {
 		out["status"] = "skipped"
-		out["reason"] = "không có URL discovery (SVC_" + strings.ToUpper(name) + "_URL)"
+		out["reason"] = "không có SVC_" + strings.ToUpper(strings.ReplaceAll(name, "-", "_")) + "_URL"
 		return out
 	}
 	client := &http.Client{Timeout: 4 * time.Second}
@@ -80,42 +81,70 @@ func probeService(name, baseURL, path string) map[string]any {
 	return out
 }
 
-func fleetHandler(w http.ResponseWriter, _ *http.Request) {
-	workerURL := strings.TrimSpace(os.Getenv("SVC_WORKER_URL"))
-	webURL := strings.TrimSpace(os.Getenv("SVC_WEB_URL"))
+func internalServices() []struct {
+	name, envKey, path string
+	role               string
+	stack              string
+} {
+	return []struct {
+		name, envKey, path string
+		role               string
+		stack              string
+	}{
+		{"node", "SVC_NODE_URL", "/hello", "backend", "node"},
+		{"dotnet", "SVC_DOTNET_URL", "/hello", "backend", "dotnet"},
+		{"worker", "SVC_WORKER_URL", "/status", "internal", "python"},
+	}
+}
 
-	services := []map[string]any{
-		{
-			"name":    "api",
-			"role":    "backend",
-			"public":  true,
-			"ingress": "/api",
-			"status":  "ok",
+func polyglotHandler(w http.ResponseWriter, _ *http.Request) {
+	out := map[string]any{
+		"gateway": map[string]any{
+			"service": "api",
+			"stack":   "go",
 			"version": appVersion,
 			"git_ref": buildRef,
 		},
-		probeService("web", webURL, "/"),
-		probeService("worker", workerURL, "/status"),
+		"level":  "L4B",
+		"layout": "multi-polyglot-full",
 	}
+	backends := make([]map[string]any, 0, 3)
+	for _, s := range internalServices() {
+		item := probeService(s.name, os.Getenv(s.envKey), s.path)
+		item["stack"] = s.stack
+		item["role"] = s.role
+		backends = append(backends, item)
+	}
+	out["backends"] = backends
+	writeJSON(w, http.StatusOK, out)
+}
 
-	for i := range services {
-		switch services[i]["name"] {
-		case "web":
-			services[i]["role"] = "frontend"
-			services[i]["public"] = true
-			services[i]["ingress"] = "/"
-		case "worker":
-			services[i]["role"] = "internal"
-			services[i]["public"] = false
-			services[i]["ingress"] = nil
-			services[i]["discovery"] = "SVC_WORKER_URL"
-		}
+func fleetHandler(w http.ResponseWriter, _ *http.Request) {
+	services := []map[string]any{
+		{
+			"name": "api", "role": "gateway", "stack": "go", "public": true,
+			"ingress": "/api", "status": "ok", "version": appVersion, "git_ref": buildRef,
+		},
+	}
+	webProbe := probeService("web", os.Getenv("SVC_WEB_URL"), "/")
+	webProbe["role"] = "frontend"
+	webProbe["stack"] = "react"
+	webProbe["public"] = true
+	webProbe["ingress"] = "/"
+	services = append(services, webProbe)
+
+	for _, s := range internalServices() {
+		item := probeService(s.name, os.Getenv(s.envKey), s.path)
+		item["role"] = s.role
+		item["stack"] = s.stack
+		item["public"] = false
+		item["discovery"] = s.envKey
+		services = append(services, item)
 	}
 
 	publicCount, internalCount := 0, 0
 	for _, s := range services {
-		pub, _ := s["public"].(bool)
-		if pub {
+		if pub, _ := s["public"].(bool); pub {
 			publicCount++
 		} else {
 			internalCount++
@@ -123,21 +152,17 @@ func fleetHandler(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"layout":  "multi-n-service",
-		"level":   "L3",
+		"layout":  "multi-polyglot-full",
+		"level":   "L4B",
 		"summary": fmt.Sprintf("%d services · %d public · %d internal", len(services), publicCount, internalCount),
 		"fleet": map[string]any{
-			"total":    len(services),
-			"public":   publicCount,
-			"internal": internalCount,
+			"total": len(services), "public": publicCount, "internal": internalCount,
 		},
 		"services": services,
+		"stacks":   []string{"react", "go", "node", "dotnet", "python"},
 		"api": map[string]any{
-			"version": appVersion,
-			"git_ref": buildRef,
-			"git_sha": buildSHA,
+			"version": appVersion, "git_ref": buildRef, "git_sha": buildSHA,
 		},
-		"note": "Worker không có Ingress — browser chỉ thấy qua API gọi nội bộ cluster (SVC_WORKER_URL).",
 	})
 }
 
@@ -149,29 +174,19 @@ func main() {
 	}
 	greeting := requiredEnv("APP_GREETING")
 
-	http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
-		writeHealth(w)
-	})
-	http.HandleFunc("/api/health", func(w http.ResponseWriter, _ *http.Request) {
-		writeHealth(w)
-	})
+	http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) { writeHealth(w) })
+	http.HandleFunc("/api/health", func(w http.ResponseWriter, _ *http.Request) { writeHealth(w) })
 	http.HandleFunc("/api/fleet", fleetHandler)
+	http.HandleFunc("/api/polyglot", polyglotHandler)
 	http.HandleFunc("/api/greeting", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s", r.Method, r.URL.Path)
 		writeJSON(w, http.StatusOK, map[string]string{
-			"greeting":    greeting,
-			"build_label": buildLabel,
-			"git_sha":     buildSHA,
-			"git_ref":     buildRef,
-			"version":     appVersion,
+			"greeting": greeting, "build_label": buildLabel,
+			"git_sha": buildSHA, "git_ref": buildRef, "version": appVersion,
 		})
 	})
-	http.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		_, _ = fmt.Fprintf(w, "test-k8s api v%s\npath=%s\n", appVersion, r.URL.Path)
-	})
 
-	log.Printf("api listening on :%s (%s)", port, appVersion)
+	log.Printf("api (go) listening on :%s (%s)", port, appVersion)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal(err)
 	}

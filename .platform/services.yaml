@@ -11,6 +11,18 @@ services:
     build_mode: dockerfile
     ingress: /
     health: /
+  - name: node
+    path: backend-node
+    build_mode: buildpack
+    stack: node
+    expose: false
+    health: /health
+  - name: dotnet
+    path: backend-dotnet
+    build_mode: dockerfile
+    dockerfile: backend-dotnet/Dockerfile
+    expose: false
+    health: /health
   - name: worker
     path: worker
     build_mode: buildpack

@@ -1,41 +1,37 @@
-# test-k8s — branch `multi-polyglot`
+# test-k8s — branch `multi-polyglot-full`
 
-Pilot **L4B polyglot**: Go (Docker) api + nginx web + **Python buildpack** worker internal.
+Pilot **L4B polyglot full** — React + Go + Node + .NET + Python trong 1 repo.
 
-| Service | Stack | Build |
-|---------|-------|-------|
-| api | Go | Dockerfile `backend/` |
-| web | nginx | Dockerfile `frontend/` |
-| worker | Python | Buildpack `worker/` (Procfile + requirements.txt) |
+| Service | Stack | Build | Public |
+|---------|-------|-------|--------|
+| `web` | React (Vite) | Dockerfile | ✓ `/` |
+| `api` | Go | Dockerfile | ✓ `/api` |
+| `node` | Node.js | Buildpack | internal |
+| `dotnet` | .NET 8 | Dockerfile | internal |
+| `worker` | Python | Buildpack | internal |
 
-Branch trước: `multi-n-service` (worker Go Docker). Branch này đổi worker → Python buildpack.
+## Gọi thử
 
-Console: sync `.platform/services.yaml` → sync workflow → push.
+- Web: `GET /api/fleet` — fleet view 5 service
+- Web: `GET /api/polyglot` — Go gateway gọi Node + .NET + Python worker
 
-## Cấu trúc
+## Console
 
+1. Branch `multi-polyglot-full`
+2. Sync `.platform/services.yaml`
+3. Sync workflow GitHub → push
+
+## Local
+
+```bash
+# API
+cd backend && APP_GREETING=local go run ./cmd/server
+
+# Node
+cd backend-node && PORT=8081 node index.js
+
+# React
+cd frontend && npm install && npm run dev
 ```
-backend/     → api (public, Ingress /api)
-frontend/    → web (public, Ingress /)
-worker/      → worker (internal — ping API qua SVC_API_URL)
-.platform/   → env contract
-```
 
-## Console (research-labs)
-
-1. Layout **Multi-service** → 3 service: api, web, worker (`expose_ingress=false`)
-2. Branch = `multi-n-service`
-3. Sync workflow GitHub (3 bước build)
-4. Push branch này
-
-Worker: `GET /health`, `GET /status` (log ping tới api nội bộ).
-
-## Env contract
-
-| Biến | Scope |
-|------|--------|
-| `BUILD_LABEL` | Build |
-| `APP_GREETING` | Runtime (api) |
-| `SVC_API_URL` | Auto-inject platform (worker) |
-
-Các branch khác: `multi-service` (2 service), `main` (single).
+Branch khác: `multi-polyglot` (Go+Python), `multi-n-service`, `multi-service`.

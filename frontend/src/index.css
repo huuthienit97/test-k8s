@@ -1,0 +1,95 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+  line-height: 1.5;
+}
+
+body {
+  margin: 0;
+}
+
+.app {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 16px 48px;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.badge-react { background: #dbeafe; color: #1d4ed8; }
+.badge-l4 { background: #dcfce7; color: #15803d; }
+.badge-stacks { background: #fef3c7; color: #b45309; }
+
+h1 { font-size: 1.5rem; margin: 8px 0; }
+
+.muted { color: #64748b; font-size: 14px; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+
+button {
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button.secondary { background: #e2e8f0; color: #0f172a; }
+
+button:disabled { opacity: 0.6; cursor: wait; }
+
+.fleet { display: grid; gap: 10px; margin: 20px 0; }
+
+.svc {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #fff;
+}
+
+.svc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.svc-name { font-weight: 700; }
+
+.pill {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.pill-ok { background: #dcfce7; color: #15803d; }
+.pill-warn { background: #fee2e2; color: #b91c1c; }
+.pill-stack { background: #f1f5f9; color: #475569; }
+
+.svc-meta { font-size: 13px; color: #64748b; }
+
+pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 16px;
+  border-radius: 8px;
+  overflow: auto;
+  font-size: 12px;
+}
