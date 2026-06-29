@@ -2,6 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 
 const API = (import.meta.env.VITE_API_BASE || "/api").replace(/\/$/, "");
 
+const CALL_BUTTONS = [
+  { id: "go", label: "Go (gateway)", path: "/call/go", stack: "go" },
+  { id: "node", label: "Node", path: "/call/node", stack: "node" },
+  { id: "dotnet", label: ".NET", path: "/call/dotnet", stack: "dotnet" },
+  { id: "worker", label: "Python worker", path: "/call/worker", stack: "python" },
+];
+
 function pill(text, cls) {
   return <span className={`pill ${cls}`}>{text}</span>;
 }
@@ -29,39 +36,42 @@ function ServiceCard({ s }) {
 export default function App() {
   const [fleet, setFleet] = useState(null);
   const [polyglot, setPolyglot] = useState(null);
+  const [lastCall, setLastCall] = useState("");
   const [raw, setRaw] = useState("");
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-  const loadFleet = useCallback(async () => {
+  const fetchJSON = useCallback(async (path, label) => {
     setLoading(true);
     setErr("");
+    setLastCall(label || path);
     try {
-      const r = await fetch(`${API}/fleet`);
+      const r = await fetch(`${API}${path}`);
       const j = await r.json();
-      setFleet(j);
       setRaw(JSON.stringify(j, null, 2));
+      return j;
     } catch (e) {
       setErr(String(e.message || e));
+      return null;
     } finally {
       setLoading(false);
     }
   }, []);
 
+  const loadFleet = useCallback(async () => {
+    const j = await fetchJSON("/fleet", "fleet");
+    if (j) setFleet(j);
+  }, [fetchJSON]);
+
   const loadPolyglot = useCallback(async () => {
-    setLoading(true);
-    setErr("");
-    try {
-      const r = await fetch(`${API}/polyglot`);
-      const j = await r.json();
-      setPolyglot(j);
-      setRaw(JSON.stringify(j, null, 2));
-    } catch (e) {
-      setErr(String(e.message || e));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    const j = await fetchJSON("/polyglot", "polyglot");
+    if (j) setPolyglot(j);
+  }, [fetchJSON]);
+
+  const callBackend = useCallback(
+    (btn) => fetchJSON(btn.path, btn.label),
+    [fetchJSON]
+  );
 
   useEffect(() => {
     loadFleet();
@@ -79,11 +89,32 @@ export default function App() {
       </div>
       <h1>Polyglot demo</h1>
       <p className="muted">
-        React gọi Go gateway (<code>/api</code>) → Node, .NET, Python worker qua{" "}
-        <code>SVC_*_URL</code> nội bộ cluster.
+        Trình duyệt chỉ gọi được <strong>Go gateway</strong> (<code>/api/*</code>). Node / .NET / Python là{" "}
+        <em>internal</em> — React bấm nút → Go proxy qua <code>SVC_*_URL</code>.
       </p>
       {fleet?.summary && <p className="muted">{fleet.summary}</p>}
       {err && <p style={{ color: "#b91c1c" }}>{err}</p>}
+
+      <h2 className="section-title">Gọi từng backend</h2>
+      <div className="call-grid">
+        {CALL_BUTTONS.map((btn) => (
+          <button
+            key={btn.id}
+            type="button"
+            className={btn.id === "go" ? "" : "secondary"}
+            disabled={loading}
+            onClick={() => callBackend(btn)}
+            title={`GET ${API}${btn.path}`}
+          >
+            {btn.label}
+          </button>
+        ))}
+      </div>
+      {lastCall && !loading && (
+        <p className="muted" style={{ fontSize: 12 }}>
+          Vừa gọi: <code>{API}{CALL_BUTTONS.find((b) => b.label === lastCall)?.path || ""}</code>
+        </p>
+      )}
 
       <div className="fleet">
         {services.map((s) => (
@@ -93,7 +124,7 @@ export default function App() {
 
       {backends.length > 0 && (
         <>
-          <h2 style={{ fontSize: "1.1rem" }}>Backends (polyglot)</h2>
+          <h2 className="section-title">Backends (polyglot)</h2>
           <div className="fleet">
             {backends.map((s) => (
               <ServiceCard key={s.name} s={s} />
@@ -102,12 +133,13 @@ export default function App() {
         </>
       )}
 
+      <h2 className="section-title">Tổng hợp</h2>
       <div className="actions">
         <button type="button" onClick={loadFleet} disabled={loading}>
           Tải /api/fleet
         </button>
         <button type="button" className="secondary" onClick={loadPolyglot} disabled={loading}>
-          Gọi /api/polyglot
+          Gọi /api/polyglot (tất cả)
         </button>
       </div>
 

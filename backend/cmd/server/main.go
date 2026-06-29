@@ -166,6 +166,38 @@ func fleetHandler(w http.ResponseWriter, _ *http.Request) {
 	})
 }
 
+func callBackendHandler(w http.ResponseWriter, r *http.Request) {
+	name := strings.Trim(strings.TrimPrefix(r.URL.Path, "/api/call/"), "/")
+	if name == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "thiếu tên service — vd. /api/call/node"})
+		return
+	}
+	if name == "go" || name == "api" {
+		writeJSON(w, http.StatusOK, map[string]any{
+			"name": "api", "stack": "go", "via": "go-gateway", "status": "ok",
+			"version": appVersion, "git_ref": buildRef, "git_sha": buildSHA,
+			"url": "/api/health",
+		})
+		return
+	}
+	for _, s := range internalServices() {
+		if s.name != name {
+			continue
+		}
+		result := probeService(s.name, os.Getenv(s.envKey), s.path)
+		result["stack"] = s.stack
+		result["role"] = s.role
+		result["via"] = "go-gateway"
+		result["discovery"] = s.envKey
+		writeJSON(w, http.StatusOK, result)
+		return
+	}
+	writeJSON(w, http.StatusNotFound, map[string]string{
+		"error": "service không tồn tại: " + name,
+		"hint":  "dùng node | dotnet | worker | go",
+	})
+}
+
 func main() {
 	log.SetFlags(log.LstdFlags)
 	port := strings.TrimSpace(os.Getenv("PORT"))
@@ -178,6 +210,7 @@ func main() {
 	http.HandleFunc("/api/health", func(w http.ResponseWriter, _ *http.Request) { writeHealth(w) })
 	http.HandleFunc("/api/fleet", fleetHandler)
 	http.HandleFunc("/api/polyglot", polyglotHandler)
+	http.HandleFunc("/api/call/", callBackendHandler)
 	http.HandleFunc("/api/greeting", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s", r.Method, r.URL.Path)
 		writeJSON(w, http.StatusOK, map[string]string{

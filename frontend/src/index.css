@@ -37,7 +37,30 @@ h1 { font-size: 1.5rem; margin: 8px 0; }
 
 .muted { color: #64748b; font-size: 14px; }
 
-.actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.section-title {
+  font-size: 1rem;
+  margin: 24px 0 10px;
+}
+
+.call-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.call-grid button.secondary {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+}
+
+.call-grid button:not(.secondary) {
+  background: #2563eb;
+  color: #fff;
+}
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; }
 
 button {
   padding: 8px 14px;
