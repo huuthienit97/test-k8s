@@ -1,4 +1,4 @@
-const string Version = "polyglot-dotnet-1";
+const string Version = "polyglot-dotnet-2";
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();

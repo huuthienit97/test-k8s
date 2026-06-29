@@ -85,11 +85,11 @@ export default function App() {
     <div className="app">
       <div className="badges">
         <span className="badge badge-react">React · web</span>
-        <span className="badge badge-l4c">L4C · Git submodule</span>
+        <span className="badge badge-l4c">L4C · deploy-retry-2</span>
         <span className="badge badge-l4">Polyglot · 5 service</span>
         <span className="badge badge-stacks">Go + Node + .NET + Python</span>
       </div>
-      <h1>Polyglot + Submodule demo</h1>
+      <h1>Polyglot + Submodule · deploy retry</h1>
       <p className="muted">
         <strong>L4C</strong> — CI checkout <code>libs/is-docker</code> từ <code>.gitmodules</code>. Node image build từ repo root.
         Trình duyệt chỉ gọi <strong>Go gateway</strong> (<code>/api/*</code>).
