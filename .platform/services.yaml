@@ -14,8 +14,9 @@ services:
     ingress: /
     health: /
   - name: node
-    path: backend-node
-    build_mode: buildpack
+    path: .
+    build_mode: dockerfile
+    dockerfile: backend-node/Dockerfile
     stack: node
     expose: false
     health: /health

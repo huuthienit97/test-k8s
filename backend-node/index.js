@@ -1,7 +1,7 @@
 "use strict";
 
 const http = require("http");
-const isDocker = require("../libs/is-docker");
+const isDocker = require("is-docker");
 
 const VERSION = "polyglot-node-submodule-1";
 const PORT = Number(process.env.PORT || 8080);

@@ -10,5 +10,6 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates
 COPY --from=build /app .
 ENV ASPNETCORE_URLS=http://+:8080
+ENV DOTNET_USE_POLLING_FILE_WATCHER=1
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "PolyglotApi.dll"]

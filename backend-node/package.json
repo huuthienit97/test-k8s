@@ -8,5 +8,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "is-docker": "file:./libs/is-docker"
   }
 }

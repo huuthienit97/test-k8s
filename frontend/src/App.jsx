@@ -27,6 +27,7 @@ function ServiceCard({ s }) {
       <div className="svc-meta">
         {s.public ? `Ingress ${s.ingress || "/"}` : `internal · ${s.discovery || "cluster DNS"}`}
         {s.body?.version ? ` · v ${s.body.version}` : ""}
+        {s.body?.submodule ? " · submodule" : ""}
         {s.body?.message ? ` · ${s.body.message}` : ""}
       </div>
     </div>
@@ -84,13 +85,14 @@ export default function App() {
     <div className="app">
       <div className="badges">
         <span className="badge badge-react">React · web</span>
-        <span className="badge badge-l4">L4B · Polyglot full</span>
+        <span className="badge badge-l4c">L4C · Git submodule</span>
+        <span className="badge badge-l4">Polyglot · 5 service</span>
         <span className="badge badge-stacks">Go + Node + .NET + Python</span>
       </div>
-      <h1>Polyglot demo</h1>
+      <h1>Polyglot + Submodule demo</h1>
       <p className="muted">
-        Trình duyệt chỉ gọi được <strong>Go gateway</strong> (<code>/api/*</code>). Node / .NET / Python là{" "}
-        <em>internal</em> — React bấm nút → Go proxy qua <code>SVC_*_URL</code>.
+        <strong>L4C</strong> — CI checkout <code>libs/is-docker</code> từ <code>.gitmodules</code>. Node image build từ repo root.
+        Trình duyệt chỉ gọi <strong>Go gateway</strong> (<code>/api/*</code>).
       </p>
       {fleet?.summary && <p className="muted">{fleet.summary}</p>}
       {err && <p style={{ color: "#b91c1c" }}>{err}</p>}

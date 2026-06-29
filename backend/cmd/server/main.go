@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const appVersion = "polyglot-full-api-1"
+const appVersion = "polyglot-submodule-api-1"
 
 var buildSHA = "local"
 var buildRef = "dev"
@@ -105,8 +105,12 @@ func polyglotHandler(w http.ResponseWriter, _ *http.Request) {
 			"version": appVersion,
 			"git_ref": buildRef,
 		},
-		"level":  "L4B",
-		"layout": "multi-polyglot-full",
+		"level":  "L4C",
+		"layout": "multi-submodules",
+		"git": map[string]any{
+			"submodules": "recursive",
+			"lib":        "libs/is-docker",
+		},
 	}
 	backends := make([]map[string]any, 0, 3)
 	for _, s := range internalServices() {
@@ -152,9 +156,9 @@ func fleetHandler(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"layout":  "multi-polyglot-full",
-		"level":   "L4B",
-		"summary": fmt.Sprintf("%d services · %d public · %d internal", len(services), publicCount, internalCount),
+		"layout":  "multi-submodules",
+		"level":   "L4C",
+		"summary": fmt.Sprintf("%d services · %d public · %d internal · git submodule", len(services), publicCount, internalCount),
 		"fleet": map[string]any{
 			"total": len(services), "public": publicCount, "internal": internalCount,
 		},
