@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const appVersion = "polyglot-submodule-api-3"
+const appVersion = "polyglot-submodule-api-4"
 
 var buildSHA = "local"
 var buildRef = "dev"
@@ -158,7 +158,7 @@ func fleetHandler(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"layout":  "multi-submodules",
 		"level":   "L4C",
-		"summary": fmt.Sprintf("%d services · %d public · %d internal · auto-deploy demo v3", len(services), publicCount, internalCount),
+		"summary": fmt.Sprintf("%d services · %d public · %d internal · auto-deploy demo v4", len(services), publicCount, internalCount),
 		"fleet": map[string]any{
 			"total": len(services), "public": publicCount, "internal": internalCount,
 		},

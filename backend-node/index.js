@@ -26,7 +26,7 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(
       JSON.stringify({
-        message: "auto-deploy demo v3 — node + submodule OK",
+        message: "auto-deploy demo v4 — node + submodule OK",
         stack: "node",
         version: VERSION,
         is_docker: isDocker(),

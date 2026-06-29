@@ -85,14 +85,14 @@ export default function App() {
     <div className="app">
       <div className="badges">
         <span className="badge badge-react">React · web</span>
-        <span className="badge badge-autodeploy">Auto-deploy · v3</span>
+        <span className="badge badge-autodeploy">Auto-deploy · v4</span>
         <span className="badge badge-l4c">L4C · submodule</span>
         <span className="badge badge-stacks">5 service fleet</span>
       </div>
       <h1>Auto-deploy demo — push → CI → Platform</h1>
       <p className="muted">
         Thay đổi này để thử <strong>auto-deploy</strong> trên Console. Sau khi GitHub Actions xong, tab{" "}
-        <strong>Deploy</strong> sẽ poll tiến trình · site hiện badge <em>v3</em>.
+        <strong>Deploy</strong> sẽ poll tiến trình · site hiện badge <em>v4</em> (hồng).
       </p>
       {fleet?.api?.git_sha && (
         <p className="deploy-sha-hint">
