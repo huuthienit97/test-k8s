@@ -1,0 +1,135 @@
+name: Build and push (test-hanbor)
+
+on:
+  push:
+    branches: [multi-submodules]
+  workflow_dispatch:
+
+env:
+  API_IMAGE: harbor.161-97-176-55.sslip.io/test-hanbor/api:latest
+  WEB_IMAGE: harbor.161-97-176-55.sslip.io/test-hanbor/web:latest
+  NODE_IMAGE: harbor.161-97-176-55.sslip.io/test-hanbor/node:latest
+  DOTNET_IMAGE: harbor.161-97-176-55.sslip.io/test-hanbor/dotnet:latest
+  WORKER_IMAGE: harbor.161-97-176-55.sslip.io/test-hanbor/worker:latest
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Kiểm tra cấu hình env (Platform)
+        run: |
+          CODE=$(curl -sS -o /tmp/platform-validate.json -w '%{http_code}' -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy/validate-config" \
+            -H "Content-Type: application/json" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN_TEST_HANBOR }}" \
+            -d '{"environment":"dev"}')
+          if [ "$CODE" != "200" ]; then
+            echo "Platform validate-config HTTP $CODE:"
+            cat /tmp/platform-validate.json
+            exit 22
+          fi
+
+      - name: Notify platform (build started)
+        continue-on-error: true
+        run: |
+          curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy/event" \
+            -H "Content-Type: application/json" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN_TEST_HANBOR }}" \
+            -d '{"event":"build_started","image_tag":"'"${{ github.sha }}"'","environment":"dev"}'
+
+      - name: Login Harbor
+        uses: docker/login-action@v3
+        with:
+          registry: harbor.161-97-176-55.sslip.io
+          username: ${{ secrets.HARBOR_USERNAME_TEST_HANBOR }}
+          password: ${{ secrets.HARBOR_PASSWORD_TEST_HANBOR }}
+
+      - name: Setup pack (Buildpack)
+        uses: buildpacks/github-actions/setup-pack@v5.12.5
+
+      - name: Build and push Api
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/Dockerfile
+          push: true
+          tags: |
+            harbor.161-97-176-55.sslip.io/test-hanbor/api:latest
+            harbor.161-97-176-55.sslip.io/test-hanbor/api:${{ github.sha }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            GIT_REF=${{ github.ref_name }}
+            BUILD_LABEL=test-hanbor
+            VITE_API_BASE=/api
+
+      - name: Build and push Web
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          push: true
+          tags: |
+            harbor.161-97-176-55.sslip.io/test-hanbor/web:latest
+            harbor.161-97-176-55.sslip.io/test-hanbor/web:${{ github.sha }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            GIT_REF=${{ github.ref_name }}
+            BUILD_LABEL=test-hanbor
+            VITE_API_BASE=/api
+
+      - name: Build and push Node
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend-node/Dockerfile
+          push: true
+          tags: |
+            harbor.161-97-176-55.sslip.io/test-hanbor/node:latest
+            harbor.161-97-176-55.sslip.io/test-hanbor/node:${{ github.sha }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            GIT_REF=${{ github.ref_name }}
+            BUILD_LABEL=test-hanbor
+            VITE_API_BASE=/api
+
+      - name: Build and push Dotnet
+        uses: docker/build-push-action@v6
+        with:
+          context: backend-dotnet
+          file: backend-dotnet/Dockerfile
+          push: true
+          tags: |
+            harbor.161-97-176-55.sslip.io/test-hanbor/dotnet:latest
+            harbor.161-97-176-55.sslip.io/test-hanbor/dotnet:${{ github.sha }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            GIT_REF=${{ github.ref_name }}
+            BUILD_LABEL=test-hanbor
+            VITE_API_BASE=/api
+
+      - name: Build and push Worker
+        run: |
+          pack build "harbor.161-97-176-55.sslip.io/test-hanbor/worker:latest" \
+            --path "worker" \
+            --builder paketobuildpacks/builder-jammy-base \
+            --publish \
+            --tag "harbor.161-97-176-55.sslip.io/test-hanbor/worker:${{ github.sha }}" \
+            --env "GIT_SHA=${{ github.sha }}" \
+            --env "GIT_REF=${{ github.ref_name }}" \
+            --env "PORT=8080" \
+            --env "BP_CPYTHON_VERSION=3.11" \
+            --env "BUILD_LABEL=test-hanbor" \
+            --env "VITE_API_BASE=/api"
+
+      - name: Deploy to Platform
+        run: |
+          curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy" \
+            -H "Content-Type: application/json" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN_TEST_HANBOR }}" \
+            -d '{"image_tag":"'"${{ github.sha }}"'","environment":"dev"}'
