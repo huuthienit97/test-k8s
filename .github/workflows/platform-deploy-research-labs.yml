@@ -2,7 +2,7 @@ name: Build and push (research-labs)
 
 on:
   push:
-    branches: [multi-polyglot-full]
+    branches: [multi-submodules]
   workflow_dispatch:
 
 env:
@@ -19,6 +19,9 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Kiểm tra cấu hình env (Platform)
         run: |
