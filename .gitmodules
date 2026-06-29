@@ -1,0 +1,3 @@
+[submodule "libs/is-docker"]
+	path = libs/is-docker
+	url = https://github.com/sindresorhus/is-docker.git

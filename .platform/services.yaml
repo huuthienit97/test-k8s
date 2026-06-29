@@ -1,5 +1,7 @@
 version: 1
 layout: multi
+git:
+  submodules: recursive
 services:
   - name: api
     path: backend
