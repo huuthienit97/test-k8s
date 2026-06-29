@@ -18,10 +18,15 @@ jobs:
 
       - name: Kiểm tra cấu hình env (Platform)
         run: |
-          curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy/validate-config" \
+          CODE=$(curl -sS -o /tmp/platform-validate.json -w '%{http_code}' -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy/validate-config" \
             -H "Content-Type: application/json" \
             -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN_TEST_HANBOR }}" \
-            -d '{"environment":"dev"}'
+            -d '{"environment":"dev"}')
+          if [ "$CODE" != "200" ]; then
+            echo "Platform validate-config HTTP $CODE:"
+            cat /tmp/platform-validate.json
+            exit 22
+          fi
 
       - name: Notify platform (build started)
         continue-on-error: true
@@ -50,6 +55,7 @@ jobs:
           build-args: |
             GIT_SHA=${{ github.sha }}
             GIT_REF=${{ github.ref_name }}
+            BUILD_LABEL=test-hanbor
 
       - name: Deploy to Platform
         run: |
