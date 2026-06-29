@@ -1,0 +1,59 @@
+name: Build and push (test-hanbor)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  IMAGE: harbor.161-97-176-55.sslip.io/test-hanbor/app:latest
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Kiểm tra cấu hình env (Platform)
+        run: |
+          curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy/validate-config" \
+            -H "Content-Type: application/json" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN_TEST_HANBOR }}" \
+            -d '{"environment":"dev"}'
+
+      - name: Notify platform (build started)
+        continue-on-error: true
+        run: |
+          curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy/event" \
+            -H "Content-Type: application/json" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN_TEST_HANBOR }}" \
+            -d '{"event":"build_started","image_tag":"'"${{ github.sha }}"'","environment":"dev"}'
+
+      - name: Login Harbor
+        uses: docker/login-action@v3
+        with:
+          registry: harbor.161-97-176-55.sslip.io
+          username: ${{ secrets.HARBOR_USERNAME_TEST_HANBOR }}
+          password: ${{ secrets.HARBOR_PASSWORD_TEST_HANBOR }}
+
+      - name: Build and push App
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            harbor.161-97-176-55.sslip.io/test-hanbor/app:latest
+            harbor.161-97-176-55.sslip.io/test-hanbor/app:${{ github.sha }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            GIT_REF=${{ github.ref_name }}
+
+      - name: Deploy to Platform
+        run: |
+          curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy" \
+            -H "Content-Type: application/json" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN_TEST_HANBOR }}" \
+            -d '{"image_tag":"'"${{ github.sha }}"'","environment":"dev"}'
