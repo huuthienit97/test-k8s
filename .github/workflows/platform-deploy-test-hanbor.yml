@@ -56,7 +56,6 @@ jobs:
             GIT_SHA=${{ github.sha }}
             GIT_REF=${{ github.ref_name }}
             BUILD_LABEL=test-hanbor
-            VITE_API_BASE=/api
 
       - name: Deploy to Platform
         run: |
