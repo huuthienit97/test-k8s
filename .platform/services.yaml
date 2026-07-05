@@ -1,13 +1,38 @@
 version: 1
 layout: multi
-# git:
-#   submodules: recursive  # L4C — bật khi repo có .gitmodules / monorepo submodule
+submodules: ""
+git:
+    submodules: ""
 services:
-  - name: api
-    path: backend
-    ingress: /api
-    health: /health
-  - name: web
-    path: frontend
-    ingress: /
-    health: /
+    - name: api
+      display_name: Api
+      path: backend
+      build_context: ""
+      dockerfile: ""
+      dockerfile_path: backend/Dockerfile
+      build_mode: dockerfile
+      stack: ""
+      port: 8080
+      container_port: 0
+      health: /health
+      health_path: ""
+      ingress: /api
+      ingress_path: ""
+      expose: null
+      expose_ingress: null
+    - name: web
+      display_name: Web
+      path: frontend
+      build_context: ""
+      dockerfile: ""
+      dockerfile_path: frontend/Dockerfile
+      build_mode: dockerfile
+      stack: ""
+      port: 8080
+      container_port: 0
+      health: /
+      health_path: ""
+      ingress: /
+      ingress_path: ""
+      expose: null
+      expose_ingress: null
