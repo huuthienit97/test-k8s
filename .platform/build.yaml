@@ -1,5 +1,8 @@
 version: 1
 vars:
-  BUILD_LABEL:
+  VITE_API_BASE:
     required: true
-    description: Nhãn build hiển thị trên /health (Console → Khi build image)
+    description: Frontend gọi API — prod/dev deploy dùng /api (cùng domain)
+  NEXT_PUBLIC_API_BASE:
+    required: false
+    description: Next.js — cùng giá trị /api nếu dùng

@@ -1,0 +1,14 @@
+# syntax=docker/dockerfile:1
+FROM golang:1.23-alpine AS build
+WORKDIR /src
+COPY go.mod ./
+COPY . .
+RUN CGO_ENABLED=0 go build -o /api .
+
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates
+WORKDIR /app
+COPY --from=build /api .
+ENV PORT=8080
+EXPOSE 8080
+CMD ["./api"]
