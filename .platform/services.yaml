@@ -1,34 +1,86 @@
 version: 1
 layout: multi
+submodules: ""
 git:
-  submodules: recursive
+    submodules: recursive
 services:
-  - name: api
-    path: backend
-    build_mode: dockerfile
-    ingress: /api
-    health: /health
-  - name: web
-    path: frontend
-    build_mode: dockerfile
-    ingress: /
-    health: /
-  - name: node
-    path: .
-    build_mode: dockerfile
-    dockerfile: backend-node/Dockerfile
-    stack: node
-    expose: false
-    health: /health
-  - name: dotnet
-    path: backend-dotnet
-    build_mode: dockerfile
-    dockerfile: backend-dotnet/Dockerfile
-    expose: false
-    health: /health
-  - name: worker
-    path: worker
-    build_mode: buildpack
-    stack: python
-    expose: false
-    health: /health
+    - name: api
+      display_name: Api
+      path: backend
+      build_context: ""
+      dockerfile: ""
+      dockerfile_path: backend/Dockerfile
+      build_mode: dockerfile
+      stack: ""
+      port: 8080
+      container_port: 0
+      health: /health
+      health_path: ""
+      ingress: /api
+      ingress_path: ""
+      expose: null
+      expose_ingress: null
+    - name: web
+      display_name: Web
+      path: frontend
+      build_context: ""
+      dockerfile: ""
+      dockerfile_path: frontend/Dockerfile
+      build_mode: dockerfile
+      stack: ""
+      port: 8080
+      container_port: 0
+      health: /health
+      health_path: ""
+      ingress: /
+      ingress_path: ""
+      expose: null
+      expose_ingress: null
+    - name: node
+      display_name: Node
+      path: .
+      build_context: ""
+      dockerfile: ""
+      dockerfile_path: backend-node/Dockerfile
+      build_mode: dockerfile
+      stack: node
+      port: 8080
+      container_port: 0
+      health: /health
+      health_path: ""
+      ingress: '-'
+      ingress_path: ""
+      expose: false
+      expose_ingress: null
+    - name: dotnet
+      display_name: Dotnet
+      path: backend-dotnet
+      build_context: ""
+      dockerfile: ""
+      dockerfile_path: backend-dotnet/Dockerfile
+      build_mode: dockerfile
+      stack: ""
+      port: 8080
+      container_port: 0
+      health: /health
+      health_path: ""
+      ingress: '-'
+      ingress_path: ""
+      expose: false
+      expose_ingress: null
+    - name: worker
+      display_name: Worker
+      path: worker
+      build_context: ""
+      dockerfile: ""
+      dockerfile_path: worker/Dockerfile
+      build_mode: buildpack
+      stack: python
+      port: 8080
+      container_port: 0
+      health: /health
+      health_path: ""
+      ingress: '-'
+      ingress_path: ""
+      expose: false
+      expose_ingress: null
