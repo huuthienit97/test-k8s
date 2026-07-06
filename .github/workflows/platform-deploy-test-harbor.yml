@@ -23,6 +23,24 @@ jobs:
           submodules: recursive
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            platform:
+              - '.platform/**'
+              - '.github/workflows/**'
+            api:
+              - 'backend/**'
+            web:
+              - 'frontend/**'
+            node:
+              - '**'
+            dotnet:
+              - 'backend-dotnet/**'
+            worker:
+              - 'worker/**'
+
       - name: Kiểm tra cấu hình env (Platform)
         run: |
           CODE=$(curl -sS -o /tmp/platform-validate.json -w '%{http_code}' -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy/validate-config" \
@@ -53,7 +71,73 @@ jobs:
       - name: Setup pack (Buildpack)
         uses: buildpacks/github-actions/setup-pack@v5.12.5
 
+      - name: Retag api (unchanged)
+        id: retag_api
+        if: steps.changes.outputs.api != 'true' && steps.changes.outputs.platform != 'true' && github.event_name == 'push' && github.event.before != '' && github.event.before != '0000000000000000000000000000000000000000'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          BEFORE="${{ github.event.before }}"
+          SHA="${{ github.sha }}"
+          IMG="harbor.161-97-176-55.sslip.io/test-harbor/api:latest"
+          docker pull "${IMG}:${BEFORE}"
+          docker tag "${IMG}:${BEFORE}" "${IMG}:${SHA}"
+          docker push "${IMG}:${SHA}"
+
+      - name: Retag web (unchanged)
+        id: retag_web
+        if: steps.changes.outputs.web != 'true' && steps.changes.outputs.platform != 'true' && github.event_name == 'push' && github.event.before != '' && github.event.before != '0000000000000000000000000000000000000000'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          BEFORE="${{ github.event.before }}"
+          SHA="${{ github.sha }}"
+          IMG="harbor.161-97-176-55.sslip.io/test-harbor/web:latest"
+          docker pull "${IMG}:${BEFORE}"
+          docker tag "${IMG}:${BEFORE}" "${IMG}:${SHA}"
+          docker push "${IMG}:${SHA}"
+
+      - name: Retag node (unchanged)
+        id: retag_node
+        if: steps.changes.outputs.node != 'true' && steps.changes.outputs.platform != 'true' && github.event_name == 'push' && github.event.before != '' && github.event.before != '0000000000000000000000000000000000000000'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          BEFORE="${{ github.event.before }}"
+          SHA="${{ github.sha }}"
+          IMG="harbor.161-97-176-55.sslip.io/test-harbor/node:latest"
+          docker pull "${IMG}:${BEFORE}"
+          docker tag "${IMG}:${BEFORE}" "${IMG}:${SHA}"
+          docker push "${IMG}:${SHA}"
+
+      - name: Retag dotnet (unchanged)
+        id: retag_dotnet
+        if: steps.changes.outputs.dotnet != 'true' && steps.changes.outputs.platform != 'true' && github.event_name == 'push' && github.event.before != '' && github.event.before != '0000000000000000000000000000000000000000'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          BEFORE="${{ github.event.before }}"
+          SHA="${{ github.sha }}"
+          IMG="harbor.161-97-176-55.sslip.io/test-harbor/dotnet:latest"
+          docker pull "${IMG}:${BEFORE}"
+          docker tag "${IMG}:${BEFORE}" "${IMG}:${SHA}"
+          docker push "${IMG}:${SHA}"
+
+      - name: Retag worker (unchanged)
+        id: retag_worker
+        if: steps.changes.outputs.worker != 'true' && steps.changes.outputs.platform != 'true' && github.event_name == 'push' && github.event.before != '' && github.event.before != '0000000000000000000000000000000000000000'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          BEFORE="${{ github.event.before }}"
+          SHA="${{ github.sha }}"
+          IMG="harbor.161-97-176-55.sslip.io/test-harbor/worker:latest"
+          docker pull "${IMG}:${BEFORE}"
+          docker tag "${IMG}:${BEFORE}" "${IMG}:${SHA}"
+          docker push "${IMG}:${SHA}"
+
       - name: Build and push Api
+        if: steps.changes.outputs.api == 'true' || steps.changes.outputs.platform == 'true' || github.event_name == 'workflow_dispatch' || steps.retag_api.outcome == 'failure' || steps.retag_api.outcome == 'skipped'
         uses: docker/build-push-action@v6
         with:
           context: backend
@@ -69,6 +153,7 @@ jobs:
             VITE_API_BASE=/api
 
       - name: Build and push Web
+        if: steps.changes.outputs.web == 'true' || steps.changes.outputs.platform == 'true' || github.event_name == 'workflow_dispatch' || steps.retag_web.outcome == 'failure' || steps.retag_web.outcome == 'skipped'
         uses: docker/build-push-action@v6
         with:
           context: frontend
@@ -84,6 +169,7 @@ jobs:
             VITE_API_BASE=/api
 
       - name: Build and push Node
+        if: steps.changes.outputs.node == 'true' || steps.changes.outputs.platform == 'true' || github.event_name == 'workflow_dispatch' || steps.retag_node.outcome == 'failure' || steps.retag_node.outcome == 'skipped'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -99,6 +185,7 @@ jobs:
             VITE_API_BASE=/api
 
       - name: Build and push Dotnet
+        if: steps.changes.outputs.dotnet == 'true' || steps.changes.outputs.platform == 'true' || github.event_name == 'workflow_dispatch' || steps.retag_dotnet.outcome == 'failure' || steps.retag_dotnet.outcome == 'skipped'
         uses: docker/build-push-action@v6
         with:
           context: backend-dotnet
@@ -114,6 +201,7 @@ jobs:
             VITE_API_BASE=/api
 
       - name: Build and push Worker
+        if: steps.changes.outputs.worker == 'true' || steps.changes.outputs.platform == 'true' || github.event_name == 'workflow_dispatch' || steps.retag_worker.outcome == 'failure' || steps.retag_worker.outcome == 'skipped'
         run: |
           pack build "harbor.161-97-176-55.sslip.io/test-harbor/worker:latest" \
             --path "worker" \
