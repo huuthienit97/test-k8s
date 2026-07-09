@@ -244,41 +244,41 @@ jobs:
           export IMG_DOTNET=harbor.161-97-176-55.sslip.io/test-harbor/dotnet:latest
           export IMG_WORKER=harbor.161-97-176-55.sslip.io/test-harbor/worker:latest
           python3 - <<'PY'
-from pathlib import Path
-import os
-f = Path(os.environ['GITOPS_FILE'])
-lines = f.read_text().splitlines()
-new_tag = os.environ['NEW_TAG']
-targets = {
-    os.environ['IMG_API']: True,
-    os.environ['IMG_WEB']: True,
-    os.environ['IMG_NODE']: True,
-    os.environ['IMG_DOTNET']: True,
-    os.environ['IMG_WORKER']: True,
-}
-for i, line in enumerate(lines):
-    s = line.strip()
-    if not s.startswith('name:'):
-        continue
-    name = s.split(':', 1)[1].strip()
-    if name not in targets:
-        continue
-    indent = line[:len(line)-len(line.lstrip())]
-    j = i + 1
-    replaced = False
-    while j < len(lines):
-        cur = lines[j].strip()
-        if cur.startswith('- name:') or (cur.startswith('name:') and lines[j].startswith(indent)):
-            break
-        if cur.startswith('newTag:'):
-            lines[j] = indent + '  newTag: ' + new_tag
-            replaced = True
-            break
-        j += 1
-    if not replaced:
-        lines.insert(i + 1, indent + '  newTag: ' + new_tag)
-f.write_text('\n'.join(lines) + '\n')
-PY
+          from pathlib import Path
+          import os
+          f = Path(os.environ['GITOPS_FILE'])
+          lines = f.read_text().splitlines()
+          new_tag = os.environ['NEW_TAG']
+          targets = {
+              os.environ['IMG_API']: True,
+              os.environ['IMG_WEB']: True,
+              os.environ['IMG_NODE']: True,
+              os.environ['IMG_DOTNET']: True,
+              os.environ['IMG_WORKER']: True,
+          }
+          for i, line in enumerate(lines):
+              s = line.strip()
+              if not s.startswith('name:'):
+                  continue
+              name = s.split(':', 1)[1].strip()
+              if name not in targets:
+                  continue
+              indent = line[:len(line)-len(line.lstrip())]
+              j = i + 1
+              replaced = False
+              while j < len(lines):
+                  cur = lines[j].strip()
+                  if cur.startswith('- name:') or (cur.startswith('name:') and lines[j].startswith(indent)):
+                      break
+                  if cur.startswith('newTag:'):
+                      lines[j] = indent + '  newTag: ' + new_tag
+                      replaced = True
+                      break
+                  j += 1
+              if not replaced:
+                  lines.insert(i + 1, indent + '  newTag: ' + new_tag)
+          f.write_text('\n'.join(lines) + '\n')
+          PY
           git config user.name "platform-bot"
           git config user.email "platform-bot@users.noreply.github.com"
           git add "$GITOPS_FILE"
