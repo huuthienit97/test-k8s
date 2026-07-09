@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const appVersion = "polyglot-submodule-api-4"
+const appVersion = "polyglot-submodule-api-5-redis"
 
 var buildSHA = "local"
 var buildRef = "dev"
@@ -123,13 +123,15 @@ func polyglotHandler(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
-func fleetHandler(w http.ResponseWriter, _ *http.Request) {
+func fleetHandler(w http.ResponseWriter, r *http.Request) {
 	services := []map[string]any{
 		{
 			"name": "api", "role": "gateway", "stack": "go", "public": true,
 			"ingress": "/api", "status": "ok", "version": appVersion, "git_ref": buildRef,
 		},
 	}
+	redisItem := redisStatus(r.Context())
+	services = append(services, redisItem)
 	webProbe := probeService("web", os.Getenv("SVC_WEB_URL"), "/")
 	webProbe["role"] = "frontend"
 	webProbe["stack"] = "react"
@@ -212,6 +214,8 @@ func main() {
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) { writeHealth(w) })
 	http.HandleFunc("/api/health", func(w http.ResponseWriter, _ *http.Request) { writeHealth(w) })
+	http.HandleFunc("/api/redis/ping", redisPingHandler)
+	http.HandleFunc("/api/redis/demo", redisDemoHandler)
 	http.HandleFunc("/api/fleet", fleetHandler)
 	http.HandleFunc("/api/polyglot", polyglotHandler)
 	http.HandleFunc("/api/call/", callBackendHandler)

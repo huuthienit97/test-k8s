@@ -7,6 +7,8 @@ const CALL_BUTTONS = [
   { id: "node", label: "Node", path: "/call/node", stack: "node" },
   { id: "dotnet", label: ".NET", path: "/call/dotnet", stack: "dotnet" },
   { id: "worker", label: "Python worker", path: "/call/worker", stack: "python" },
+  { id: "redis", label: "Redis ping", path: "/redis/ping", stack: "redis" },
+  { id: "redis-demo", label: "Redis SET+GET", path: "/redis/demo", stack: "redis" },
 ];
 
 function pill(text, cls) {
@@ -87,7 +89,7 @@ export default function App() {
         <span className="badge badge-react">React · web</span>
         <span className="badge badge-autodeploy">Auto-deploy · v4</span>
         <span className="badge badge-l4c">L4C · submodule</span>
-        <span className="badge badge-stacks">5 service fleet</span>
+        <span className="badge badge-stacks">5 service fleet + Redis</span>
       </div>
       <h1>Auto-deploy demo — push → CI → Platform</h1>
       <p className="muted">
