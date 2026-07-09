@@ -160,7 +160,7 @@ func fleetHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"layout":  "multi-submodules",
 		"level":   "L4C",
-		"summary": fmt.Sprintf("%d services · %d public · %d internal · auto-deploy demo v4", len(services), publicCount, internalCount),
+		"summary": fmt.Sprintf("%d services · %d public · %d internal · redis addon pilot", len(services), publicCount, internalCount),
 		"fleet": map[string]any{
 			"total": len(services), "public": publicCount, "internal": internalCount,
 		},
@@ -216,6 +216,8 @@ func main() {
 	http.HandleFunc("/api/health", func(w http.ResponseWriter, _ *http.Request) { writeHealth(w) })
 	http.HandleFunc("/api/redis/ping", redisPingHandler)
 	http.HandleFunc("/api/redis/demo", redisDemoHandler)
+	http.HandleFunc("/api/redis/get", redisGetHandler)
+	http.HandleFunc("/api/redis/set", redisSetHandler)
 	http.HandleFunc("/api/fleet", fleetHandler)
 	http.HandleFunc("/api/polyglot", polyglotHandler)
 	http.HandleFunc("/api/call/", callBackendHandler)

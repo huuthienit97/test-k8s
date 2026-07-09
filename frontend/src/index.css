@@ -34,6 +34,67 @@ body {
 .badge-l4c { background: #e0e7ff; color: #4338ca; }
 .badge-autodeploy { background: #fce7f3; color: #be185d; }
 .badge-stacks { background: #fef3c7; color: #b45309; }
+.badge-redis { background: #ffedd5; color: #c2410c; }
+
+.redis-panel {
+  margin: 20px 0;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 2px solid #fdba74;
+  background: linear-gradient(135deg, #fff7ed 0%, #fff 60%);
+}
+
+.redis-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.redis-title {
+  margin: 0;
+  color: #c2410c;
+}
+
+.pill-redis { background: #ffedd5; color: #c2410c; }
+
+.svc-redis {
+  border-color: #fdba74;
+  background: #fff7ed;
+}
+
+.redis-actions,
+.redis-form-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.redis-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.redis-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #64748b;
+  flex: 1;
+  min-width: 140px;
+}
+
+.redis-form input {
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+}
 
 .deploy-sha-hint {
   font-size: 13px;

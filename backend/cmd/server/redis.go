@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
@@ -90,6 +91,61 @@ func redisPingHandler(w http.ResponseWriter, r *http.Request) {
 		"service":     "api",
 		"via":         "REDIS_URL",
 	})
+}
+
+func redisSetHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "POST only"})
+		return
+	}
+	c := redisClient()
+	if c == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "REDIS_URL chưa cấu hình"})
+		return
+	}
+	defer c.Close()
+	var body struct {
+		Key   string `json:"key"`
+		Value string `json:"value"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&body)
+	key := strings.TrimSpace(body.Key)
+	if key == "" {
+		key = "console:hello"
+	}
+	val := body.Value
+	if val == "" {
+		val = "world-from-ui"
+	}
+	ctx := r.Context()
+	if err := c.Set(ctx, key, val, time.Hour).Err(); err != nil {
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"action": "set", "key": key, "value": val, "ttl": "1h"})
+}
+
+func redisGetHandler(w http.ResponseWriter, r *http.Request) {
+	c := redisClient()
+	if c == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "REDIS_URL chưa cấu hình"})
+		return
+	}
+	defer c.Close()
+	key := strings.TrimSpace(r.URL.Query().Get("key"))
+	if key == "" {
+		key = "console:hello"
+	}
+	val, err := c.Get(r.Context(), key).Result()
+	if err == redis.Nil {
+		writeJSON(w, http.StatusOK, map[string]any{"key": key, "value": nil, "result": "(nil)"})
+		return
+	}
+	if err != nil {
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"key": key, "value": val, "result": val})
 }
 
 func redisDemoHandler(w http.ResponseWriter, r *http.Request) {
