@@ -238,11 +238,11 @@ jobs:
           fi
           export GITOPS_FILE
           export NEW_TAG="${{ github.sha }}"
-          export IMG_API=harbor.161-97-176-55.sslip.io/test-harbor/api:latest
-          export IMG_WEB=harbor.161-97-176-55.sslip.io/test-harbor/web:latest
-          export IMG_NODE=harbor.161-97-176-55.sslip.io/test-harbor/node:latest
-          export IMG_DOTNET=harbor.161-97-176-55.sslip.io/test-harbor/dotnet:latest
-          export IMG_WORKER=harbor.161-97-176-55.sslip.io/test-harbor/worker:latest
+          export IMG_API=harbor.161-97-176-55.sslip.io/test-harbor/api
+          export IMG_WEB=harbor.161-97-176-55.sslip.io/test-harbor/web
+          export IMG_NODE=harbor.161-97-176-55.sslip.io/test-harbor/node
+          export IMG_DOTNET=harbor.161-97-176-55.sslip.io/test-harbor/dotnet
+          export IMG_WORKER=harbor.161-97-176-55.sslip.io/test-harbor/worker
           python3 - <<'PY'
           from pathlib import Path
           import os
