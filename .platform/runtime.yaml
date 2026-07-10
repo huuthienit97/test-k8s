@@ -3,3 +3,24 @@ vars:
   APP_GREETING:
     required: true
     description: Lời chào runtime (Console → Khi app chạy Pod)
+  S3_ENDPOINT:
+    required: false
+    description: Inject bởi Platform khi bật MinIO addon — endpoint S3 trong cluster
+  S3_ACCESS_KEY:
+    required: false
+    description: Inject bởi Platform khi bật MinIO addon
+  S3_SECRET_KEY:
+    required: false
+    description: Inject bởi Platform khi bật MinIO addon
+  S3_BUCKET:
+    required: false
+    description: Bucket mặc định (app) — inject bởi Platform
+  S3_REGION:
+    required: false
+    description: us-east-1
+  S3_USE_SSL:
+    required: false
+    description: false trong cluster
+  S3_FORCE_PATH_STYLE:
+    required: false
+    description: true cho MinIO path-style

@@ -1,39 +1,40 @@
-# test-k8s — branch `multi-service`
+# test-k8s — branch `feature/minio-files`
 
-Monorepo pilot **Giai đoạn 2**: 1 repo → 2 image (`api` + `web`) → 2 Deployment → Ingress `/api` + `/`.
+Monorepo demo: **api + web** + upload/list/xóa file qua **MinIO addon** (`S3_*`).
 
 ## Cấu trúc
 
 ```
-backend/     → image research-labs/api
-frontend/    → image research-labs/web
-.platform/    → env contract (BUILD_LABEL, APP_GREETING)
+backend/     → image …/api  (Go + AWS SDK S3)
+frontend/    → image …/web  (static UI upload/list/delete)
+.platform/   → runtime contract gồm S3_*
 ```
 
-## Console (research-labs)
+## API
 
-1. Tab **Deploy / Git** → **Multi-service (api + web)** → Lưu (template `backend/` + `frontend/`)
-2. Branch = `multi-service`
-3. **Kết nối repo & bật auto-deploy** (sync workflow mới — 2 bước build)
-4. Push branch này
+| Method | Path | Mô tả |
+|--------|------|--------|
+| GET | `/api/health` | Health + `s3_ready` |
+| GET | `/api/files` | List object trong bucket |
+| POST | `/api/files` | Upload multipart field `file` (+ optional `key`) |
+| DELETE | `/api/files?key=` | Xóa object |
 
-Ingress: `https://<domain-dev>/` → web, `https://<domain-dev>/api/health` → api.
+## Console
 
-## Env contract
-
-| Biến | Scope |
-|------|--------|
-| `BUILD_LABEL` | Build (`.platform/build.yaml`) |
-| `APP_GREETING` | Runtime (`.platform/runtime.yaml`) |
+1. Project bật **MinIO** addon (dev) → inject `S3_*`
+2. Deploy branch **`feature/minio-files`**
+3. Mở web → Upload / Xóa file
 
 ## Local
 
 ```bash
-# API
-cd backend && APP_GREETING=hello-local BUILD_LABEL=local go run ./cmd/server
+# Cần MinIO local hoặc copy external JSON từ Console
+export APP_GREETING=hello
+export S3_ENDPOINT=http://127.0.0.1:9000
+export S3_ACCESS_KEY=...
+export S3_SECRET_KEY=...
+export S3_BUCKET=app
+export S3_FORCE_PATH_STYLE=true
 
-# Web (cần proxy /api → localhost:8080 hoặc test sau deploy)
-cd frontend && docker build -t test-web . && docker run -p 8081:8080 test-web
+cd backend && go run ./cmd/server
 ```
-
-Các branch khác: `main` (single Go), `buildpack-node`, `buildpack-python`.

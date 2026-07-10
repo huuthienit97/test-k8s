@@ -3,37 +3,155 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>test-k8s · multi-service</title>
+  <title>test-k8s · MinIO files</title>
   <style>
     :root { font-family: system-ui, sans-serif; color: #0f172a; background: #f8fafc; }
-    body { max-width: 640px; margin: 48px auto; padding: 0 16px; }
+    body { max-width: 720px; margin: 40px auto; padding: 0 16px; }
     h1 { font-size: 1.5rem; margin-bottom: 8px; }
+    h2 { font-size: 1.1rem; margin: 28px 0 10px; }
     .muted { color: #64748b; font-size: 14px; }
     pre { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow: auto; font-size: 13px; }
     .badge { display: inline-block; background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-    button { margin-top: 12px; padding: 8px 16px; border: 0; border-radius: 6px; background: #2563eb; color: #fff; cursor: pointer; }
+    .badge.ok { background: #dcfce7; color: #166534; }
+    .badge.warn { background: #fef3c7; color: #92400e; }
+    button, .btn {
+      margin-top: 8px; padding: 8px 14px; border: 0; border-radius: 6px;
+      background: #2563eb; color: #fff; cursor: pointer; font-size: 14px;
+    }
     button:hover { background: #1d4ed8; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    button.ghost { background: #e2e8f0; color: #0f172a; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+    input[type="file"], input[type="text"] {
+      font-size: 14px; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid #e2e8f0; }
+    th { color: #64748b; font-weight: 600; }
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-top: 16px; }
   </style>
 </head>
 <body>
-  <p class="badge">frontend · web</p>
-  <h1>Monorepo demo</h1>
-  <p class="muted">Static web gọi API qua Ingress <code>/api/*</code> → service <code>api</code>.</p>
-  <p class="muted" id="deploy-note">Auto-deploy test · 2026-06-28 10:35 · multi-service</p>
-  <button type="button" id="btn">Gọi /api/health</button>
-  <pre id="out">Chưa gọi API…</pre>
+  <p class="badge">frontend · web · feature/minio-files</p>
+  <h1>MinIO file demo</h1>
+  <p class="muted">Upload / list / xóa object qua API → bucket MinIO addon (<code>S3_*</code>).</p>
+
+  <div class="card">
+    <div class="row">
+      <button type="button" id="btn-health">Gọi /api/health</button>
+      <span id="s3-badge" class="badge warn">S3: ?</span>
+    </div>
+    <pre id="out">Chưa gọi API…</pre>
+  </div>
+
+  <div class="card">
+    <h2>Upload</h2>
+    <div class="row">
+      <input type="file" id="file" />
+      <input type="text" id="key" placeholder="key (tuỳ chọn)" style="min-width:180px" />
+      <button type="button" id="btn-upload">Upload</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Files trong bucket</h2>
+    <button type="button" class="ghost" id="btn-refresh">Làm mới danh sách</button>
+    <table>
+      <thead><tr><th>Key</th><th>Size</th><th>Modified</th><th></th></tr></thead>
+      <tbody id="files-body"><tr><td colspan="4" class="muted">Đang tải…</td></tr></tbody>
+    </table>
+  </div>
+
   <script>
-    document.getElementById("btn").onclick = async function () {
+    function fmtSize(n) {
+      n = Number(n) || 0;
+      if (n < 1024) return n + " B";
+      if (n < 1048576) return (n / 1024).toFixed(1) + " KiB";
+      return (n / 1048576).toFixed(1) + " MiB";
+    }
+
+    async function loadFiles() {
+      const body = document.getElementById("files-body");
+      body.innerHTML = '<tr><td colspan="4" class="muted">Đang tải…</td></tr>';
+      try {
+        const r = await fetch("/api/files");
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || r.statusText);
+        const items = j.items || [];
+        if (!items.length) {
+          body.innerHTML = '<tr><td colspan="4" class="muted">Bucket trống</td></tr>';
+          return;
+        }
+        body.innerHTML = items.map(function (it) {
+          const key = it.key || "";
+          return "<tr><td><code>" + key.replace(/</g, "&lt;") + "</code></td><td>" +
+            fmtSize(it.size) + "</td><td>" +
+            (it.last_modified ? new Date(it.last_modified).toLocaleString() : "—") +
+            '</td><td><button type="button" class="danger btn-del" data-key="' +
+            key.replace(/"/g, "&quot;") + '">Xóa</button></td></tr>';
+        }).join("");
+        body.querySelectorAll(".btn-del").forEach(function (btn) {
+          btn.onclick = async function () {
+            const k = btn.getAttribute("data-key");
+            if (!confirm("Xóa " + k + "?")) return;
+            const del = await fetch("/api/files?key=" + encodeURIComponent(k), { method: "DELETE" });
+            const dj = await del.json().catch(function () { return {}; });
+            if (!del.ok) {
+              alert(dj.error || "Xóa thất bại");
+              return;
+            }
+            loadFiles();
+          };
+        });
+      } catch (e) {
+        body.innerHTML = '<tr><td colspan="4" class="muted">' + (e.message || "Lỗi") + "</td></tr>";
+      }
+    }
+
+    document.getElementById("btn-health").onclick = async function () {
       const out = document.getElementById("out");
+      const badge = document.getElementById("s3-badge");
       out.textContent = "Đang gọi…";
       try {
         const r = await fetch("/api/health");
         const j = await r.json();
         out.textContent = JSON.stringify(j, null, 2);
+        if (j.s3_ready) {
+          badge.textContent = "S3: ready";
+          badge.className = "badge ok";
+        } else {
+          badge.textContent = "S3: chưa inject";
+          badge.className = "badge warn";
+        }
       } catch (e) {
         out.textContent = "Lỗi: " + e.message;
       }
     };
+
+    document.getElementById("btn-upload").onclick = async function () {
+      const f = document.getElementById("file").files[0];
+      if (!f) { alert("Chọn file"); return; }
+      const fd = new FormData();
+      fd.append("file", f);
+      const key = document.getElementById("key").value.trim();
+      if (key) fd.append("key", key);
+      try {
+        const r = await fetch("/api/files", { method: "POST", body: fd });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || r.statusText);
+        alert("Đã upload: " + j.key);
+        document.getElementById("file").value = "";
+        document.getElementById("key").value = "";
+        loadFiles();
+      } catch (e) {
+        alert(e.message || "Upload thất bại");
+      }
+    };
+
+    document.getElementById("btn-refresh").onclick = loadFiles;
+    document.getElementById("btn-health").click();
+    loadFiles();
   </script>
 </body>
 </html>
