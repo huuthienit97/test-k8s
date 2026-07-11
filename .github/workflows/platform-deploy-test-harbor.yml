@@ -1,0 +1,184 @@
+name: Build and push (test-harbor)
+
+on:
+  push:
+    branches: [feature/minio-files]
+  workflow_dispatch:
+
+env:
+  API_IMAGE: harbor.161-97-176-55.sslip.io/test-harbor/api:latest
+  WEB_IMAGE: harbor.161-97-176-55.sslip.io/test-harbor/web:latest
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            platform:
+              - '.platform/**'
+              - '.github/workflows/**'
+            api:
+              - '**'
+            web:
+              - '**'
+
+      - name: Kiểm tra cấu hình env (Platform)
+        run: |
+          CODE=$(curl -sS -o /tmp/platform-validate.json -w '%{http_code}' -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy/validate-config" \
+            -H "Content-Type: application/json" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN_TEST_HARBOR }}" \
+            -d '{"environment":"dev"}')
+          if [ "$CODE" != "200" ]; then
+            echo "Platform validate-config HTTP $CODE:"
+            cat /tmp/platform-validate.json
+            exit 22
+          fi
+
+      - name: Notify platform (build started)
+        continue-on-error: true
+        run: |
+          curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy/event" \
+            -H "Content-Type: application/json" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN_TEST_HARBOR }}" \
+            -d '{"event":"build_started","image_tag":"'"${{ github.sha }}"'","environment":"dev"}'
+
+      - name: Login Harbor
+        uses: docker/login-action@v3
+        with:
+          registry: harbor.161-97-176-55.sslip.io
+          username: ${{ secrets.HARBOR_USERNAME_TEST_HARBOR }}
+          password: ${{ secrets.HARBOR_PASSWORD_TEST_HARBOR }}
+
+      - name: Retag api (unchanged)
+        id: retag_api
+        if: steps.changes.outputs.api != 'true' && steps.changes.outputs.platform != 'true' && github.event_name == 'push' && github.event.before != '' && github.event.before != '0000000000000000000000000000000000000000'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          BEFORE="${{ github.event.before }}"
+          SHA="${{ github.sha }}"
+          IMG="harbor.161-97-176-55.sslip.io/test-harbor/api:latest"
+          docker pull "${IMG}:${BEFORE}"
+          docker tag "${IMG}:${BEFORE}" "${IMG}:${SHA}"
+          docker push "${IMG}:${SHA}"
+
+      - name: Retag web (unchanged)
+        id: retag_web
+        if: steps.changes.outputs.web != 'true' && steps.changes.outputs.platform != 'true' && github.event_name == 'push' && github.event.before != '' && github.event.before != '0000000000000000000000000000000000000000'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          BEFORE="${{ github.event.before }}"
+          SHA="${{ github.sha }}"
+          IMG="harbor.161-97-176-55.sslip.io/test-harbor/web:latest"
+          docker pull "${IMG}:${BEFORE}"
+          docker tag "${IMG}:${BEFORE}" "${IMG}:${SHA}"
+          docker push "${IMG}:${SHA}"
+
+      - name: Build and push Api
+        if: steps.changes.outputs.api == 'true' || steps.changes.outputs.platform == 'true' || github.event_name == 'workflow_dispatch' || steps.retag_api.outcome == 'failure' || steps.retag_api.outcome == 'skipped'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: true
+          tags: |
+            harbor.161-97-176-55.sslip.io/test-harbor/api:latest
+            harbor.161-97-176-55.sslip.io/test-harbor/api:${{ github.sha }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            GIT_REF=${{ github.ref_name }}
+            BUILD_LABEL=test-harbor
+            VITE_API_BASE=/api
+
+      - name: Build and push Web
+        if: steps.changes.outputs.web == 'true' || steps.changes.outputs.platform == 'true' || github.event_name == 'workflow_dispatch' || steps.retag_web.outcome == 'failure' || steps.retag_web.outcome == 'skipped'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: frontend/Dockerfile
+          push: true
+          tags: |
+            harbor.161-97-176-55.sslip.io/test-harbor/web:latest
+            harbor.161-97-176-55.sslip.io/test-harbor/web:${{ github.sha }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            GIT_REF=${{ github.ref_name }}
+            BUILD_LABEL=test-harbor
+            VITE_API_BASE=/api
+
+      - name: Deploy to Platform
+        run: |
+          curl -fsS -X POST "https://platform.7mlabs.com/api/v1/hooks/deploy" \
+            -H "Content-Type: application/json" \
+            -H "X-Platform-Deploy-Token: ${{ secrets.PLATFORM_DEPLOY_TOKEN_TEST_HARBOR }}" \
+            -d '{"image_tag":"'"${{ github.sha }}"'","environment":"dev"}'
+      - name: Sync image tag to GitOps repo
+        env:
+          GITOPS_REPO_URL: https://github.com/Thien2026/gitopt
+          GITOPS_REPO_BRANCH: main
+          GITOPS_FILE: apps/test-harbor/overlays/dev/kustomization.yaml
+          GITOPS_TOKEN: ${{ secrets.PLATFORM_GITOPS_TOKEN }}
+        run: |
+          set -euo pipefail
+          tmp_dir="$(mktemp -d)"
+          git -c init.defaultBranch=main clone --depth 1 --branch "$GITOPS_REPO_BRANCH" "https://x-access-token:${GITOPS_TOKEN}@${GITOPS_REPO_URL#https://}" "$tmp_dir/gitops"
+          cd "$tmp_dir/gitops"
+          if [ ! -f "$GITOPS_FILE" ]; then
+            echo "GitOps file not found: $GITOPS_FILE" >&2
+            exit 2
+          fi
+          export GITOPS_FILE
+          export NEW_TAG="${{ github.sha }}"
+          export IMG_API=harbor.161-97-176-55.sslip.io/test-harbor/api
+          export IMG_WEB=harbor.161-97-176-55.sslip.io/test-harbor/web
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          f = Path(os.environ['GITOPS_FILE'])
+          lines = f.read_text().splitlines()
+          new_tag = os.environ['NEW_TAG']
+          targets = {
+              os.environ['IMG_API']: True,
+              os.environ['IMG_WEB']: True,
+          }
+          for i, line in enumerate(lines):
+              s = line.strip()
+              if not s.startswith('name:'):
+                  continue
+              name = s.split(':', 1)[1].strip()
+              if name not in targets:
+                  continue
+              indent = line[:len(line)-len(line.lstrip())]
+              j = i + 1
+              replaced = False
+              while j < len(lines):
+                  cur = lines[j].strip()
+                  if cur.startswith('- name:') or (cur.startswith('name:') and lines[j].startswith(indent)):
+                      break
+                  if cur.startswith('newTag:'):
+                      lines[j] = indent + '  newTag: ' + new_tag
+                      replaced = True
+                      break
+                  j += 1
+              if not replaced:
+                  lines.insert(i + 1, indent + '  newTag: ' + new_tag)
+          f.write_text('\n'.join(lines) + '\n')
+          PY
+          git config user.name "platform-bot"
+          git config user.email "platform-bot@users.noreply.github.com"
+          git add "$GITOPS_FILE"
+          if git diff --cached --quiet; then
+            echo "No GitOps change"
+            exit 0
+          fi
+          git commit -m "chore(gitops): test-harbor dev -> ${GITHUB_SHA::12}"
+          git push origin "HEAD:$GITOPS_REPO_BRANCH"
+
