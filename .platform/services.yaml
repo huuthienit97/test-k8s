@@ -1,21 +1,38 @@
-# Layout api+web — khớp branch feature/minio-files (upload MinIO).
-# Console: Deploy → Áp dụng từ repo (sau khi đã đổi service khớp branch).
 version: 1
 layout: multi
+submodules: ""
+git:
+    submodules: ""
 services:
-  - name: api
-    language: go
-    source_dir: backend
-    dockerfile: backend/Dockerfile
-    port: 8080
-    health_path: /healthz
-    public: false
-  - name: web
-    language: static
-    source_dir: frontend
-    dockerfile: frontend/Dockerfile
-    port: 80
-    health_path: /
-    public: true
-    depends_on:
-      - api
+    - name: api
+      display_name: Api
+      path: .
+      build_context: ""
+      dockerfile: ""
+      dockerfile_path: backend/Dockerfile
+      build_mode: dockerfile
+      stack: ""
+      port: 8080
+      container_port: 0
+      health: /healthz
+      health_path: ""
+      ingress: /
+      ingress_path: ""
+      expose: null
+      expose_ingress: null
+    - name: web
+      display_name: Web
+      path: .
+      build_context: ""
+      dockerfile: ""
+      dockerfile_path: frontend/Dockerfile
+      build_mode: dockerfile
+      stack: ""
+      port: 8080
+      container_port: 0
+      health: /
+      health_path: ""
+      ingress: /
+      ingress_path: ""
+      expose: null
+      expose_ingress: null
