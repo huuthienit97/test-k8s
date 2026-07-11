@@ -1,5 +1,5 @@
 # Layout api+web — branch feature/minio-files.
-# path = Docker build context (bắt buộc backend/frontend, không dùng ".").
+# health /health → probe /api/health. App cũng có /api/healthz.
 version: 1
 layout: multi
 services:
