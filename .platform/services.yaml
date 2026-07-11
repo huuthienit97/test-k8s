@@ -7,7 +7,7 @@ services:
     path: backend
     dockerfile: backend/Dockerfile
     port: 8080
-    health: /healthz
+    health: /health
     ingress: /api
     expose: true
   - name: web

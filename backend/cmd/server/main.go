@@ -123,12 +123,14 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+	writeOKHealth := func(w http.ResponseWriter, _ *http.Request) {
 		writeHealth(w, s3OK)
-	})
-	mux.HandleFunc("/api/health", func(w http.ResponseWriter, _ *http.Request) {
-		writeHealth(w, s3OK)
-	})
+	}
+	// Probe platform: PublicHealthPath("/api","/health") → /api/health
+	mux.HandleFunc("/health", writeOKHealth)
+	mux.HandleFunc("/healthz", writeOKHealth)
+	mux.HandleFunc("/api/health", writeOKHealth)
+	mux.HandleFunc("/api/healthz", writeOKHealth)
 
 	mux.HandleFunc("/api/greeting", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s", r.Method, r.URL.Path)

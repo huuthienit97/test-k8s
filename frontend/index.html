@@ -71,12 +71,24 @@
       return (n / 1048576).toFixed(1) + " MiB";
     }
 
+    async function readJSON(r) {
+      const text = await r.text();
+      try {
+        return text ? JSON.parse(text) : {};
+      } catch (e) {
+        throw new Error(
+          "API trả về không phải JSON (HTTP " + r.status + "): " +
+          text.slice(0, 80).replace(/\s+/g, " ")
+        );
+      }
+    }
+
     async function loadFiles() {
       const body = document.getElementById("files-body");
       body.innerHTML = '<tr><td colspan="4" class="muted">Đang tải…</td></tr>';
       try {
         const r = await fetch("/api/files");
-        const j = await r.json();
+        const j = await readJSON(r);
         if (!r.ok) throw new Error(j.error || r.statusText);
         const items = j.items || [];
         if (!items.length) {
@@ -96,7 +108,7 @@
             const k = btn.getAttribute("data-key");
             if (!confirm("Xóa " + k + "?")) return;
             const del = await fetch("/api/files?key=" + encodeURIComponent(k), { method: "DELETE" });
-            const dj = await del.json().catch(function () { return {}; });
+            const dj = await readJSON(del).catch(function () { return {}; });
             if (!del.ok) {
               alert(dj.error || "Xóa thất bại");
               return;
@@ -115,7 +127,7 @@
       out.textContent = "Đang gọi…";
       try {
         const r = await fetch("/api/health");
-        const j = await r.json();
+        const j = await readJSON(r);
         out.textContent = JSON.stringify(j, null, 2);
         if (j.s3_ready) {
           badge.textContent = "S3: ready";
@@ -138,7 +150,7 @@
       if (key) fd.append("key", key);
       try {
         const r = await fetch("/api/files", { method: "POST", body: fd });
-        const j = await r.json();
+        const j = await readJSON(r);
         if (!r.ok) throw new Error(j.error || r.statusText);
         alert("Đã upload: " + j.key);
         document.getElementById("file").value = "";
