@@ -25,9 +25,9 @@ jobs:
               - '.platform/**'
               - '.github/workflows/**'
             api:
-              - '**'
+              - 'backend/**'
             web:
-              - '**'
+              - 'frontend/**'
 
       - name: Kiểm tra cấu hình env (Platform)
         run: |
@@ -86,7 +86,7 @@ jobs:
         if: steps.changes.outputs.api == 'true' || steps.changes.outputs.platform == 'true' || github.event_name == 'workflow_dispatch' || steps.retag_api.outcome == 'failure' || steps.retag_api.outcome == 'skipped'
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: backend
           file: backend/Dockerfile
           push: true
           tags: |
@@ -102,7 +102,7 @@ jobs:
         if: steps.changes.outputs.web == 'true' || steps.changes.outputs.platform == 'true' || github.event_name == 'workflow_dispatch' || steps.retag_web.outcome == 'failure' || steps.retag_web.outcome == 'skipped'
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: frontend
           file: frontend/Dockerfile
           push: true
           tags: |
