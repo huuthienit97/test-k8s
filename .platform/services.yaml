@@ -1,19 +1,38 @@
-# Layout api+web — branch feature/minio-files.
-# health /health → probe /api/health. App cũng có /api/healthz.
 version: 1
 layout: multi
+submodules: ""
+git:
+    submodules: ""
 services:
-  - name: api
-    path: backend
-    dockerfile: backend/Dockerfile
-    port: 8080
-    health: /health
-    ingress: /api
-    expose: true
-  - name: web
-    path: frontend
-    dockerfile: frontend/Dockerfile
-    port: 8080
-    health: /
-    ingress: /
-    expose: true
+    - name: api
+      display_name: Api
+      path: backend
+      build_context: ""
+      dockerfile: ""
+      dockerfile_path: backend/Dockerfile
+      build_mode: dockerfile
+      stack: ""
+      port: 8080
+      container_port: 0
+      health: /health
+      health_path: ""
+      ingress: /api
+      ingress_path: ""
+      expose: null
+      expose_ingress: null
+    - name: web
+      display_name: Web
+      path: frontend
+      build_context: ""
+      dockerfile: ""
+      dockerfile_path: frontend/Dockerfile
+      build_mode: dockerfile
+      stack: ""
+      port: 8080
+      container_port: 0
+      health: /
+      health_path: ""
+      ingress: /
+      ingress_path: ""
+      expose: null
+      expose_ingress: null
